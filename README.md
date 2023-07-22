@@ -1,1 +1,1 @@
-# model-logic-for-free
+# modal-logics-for-free
