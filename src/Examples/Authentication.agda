@@ -2,7 +2,7 @@ module Examples.Authentication where
 
 open import Common.Effect
 open import Common.Free
-open import Data.Bool hiding (_≟_)
+open import Data.Bool hiding (_≟_; _∧_)
 open import Data.Empty
 open import Data.Nat hiding (_≟_)
 open import Data.Product
@@ -93,3 +93,10 @@ property₇ n = [ inj₁ (login n) ] false
 test₇ : ∀ (n : ℕ) → n ≢ 0 → program ⊢ property₇ n
 test₇ zero h = ⊥-elim (h _≡_.refl)
 test₇ (suc n) h = tt
+
+property₈ : (c : Effect.C (AuthEffect ⊕ ExceptionEffect)) → Formula (AuthEffect ⊕ ExceptionEffect)
+property₈ c = ⟨ inj₁ (login 0) ⟩ (([ c ] true) ∧ ([ c ] false))
+
+test₈ : ∀ c → program ⊢ property₈ c
+test₈ (inj₁ x) = Bool.false , tt , tt
+test₈ (inj₂ y) = Bool.false , (λ _ → tt) , id
