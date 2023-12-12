@@ -1,7 +1,11 @@
 module Common.Effect where
 
-open import Data.Bool hiding (_≟_)
-open import Data.Sum
+open import Data.Bool using (false)
+open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Sum using (_⊎_; inj₁; inj₂; [_,_])
+open import Relation.Binary.PropositionalEquality.Core using (refl)
+open import Relation.Binary.Definitions using (DecidableEquality)
+open import Relation.Nullary using (does; proof; yes; no; ofʸ; ofⁿ; _because_)
 
 record Effect : Set₁ where
   field
@@ -10,19 +14,37 @@ record Effect : Set₁ where
 
 open Effect
 
-record Decide (e : Effect) : Set₁ where
+emptyEffect : Effect
+C emptyEffect = ⊥
+R emptyEffect c = ⊥-elim c
+
+record Eq (α : Set) : Set where
   field
-    _≟_ : C e → C e → Bool
+    _==_ : DecidableEquality α
 
-open Decide ⦃ ... ⦄
-
-_⊕_ : Effect → Effect → Effect
-C (e₁ ⊕ e₂) = C e₁ ⊎ C e₂
-R (e₁ ⊕ e₂) = [ R e₁ , R e₂ ]
+open Eq ⦃...⦄
 
 instance
-  DecidePlus : {e₁ e₂ : Effect} ⦃ _ : Decide e₁ ⦄ ⦃ _ : Decide e₂ ⦄ → Decide (e₁ ⊕ e₂)
-  Decide._≟_ DecidePlus (inj₁ l) (inj₁ r) = l ≟ r
-  Decide._≟_ DecidePlus (inj₁ _) (inj₂ _) = false
-  Decide._≟_ DecidePlus (inj₂ _) (inj₁ _) = false
-  Decide._≟_ DecidePlus (inj₂ l) (inj₂ r) = l ≟ r
+  emptyEffectEq : Eq (Effect.C emptyEffect)
+  _==_ ⦃ emptyEffectEq ⦄ ()
+
+_:+:_ : Effect → Effect → Effect
+C (ε₁ :+: ε₂) = C ε₁ ⊎ C ε₂
+R (ε₁ :+: ε₂) = [ R ε₁ , R ε₂ ]
+
+instance
+  effectSumEq : {ε₁ ε₂ : Effect} → ⦃ Eq (Effect.C ε₁) ⦄ → ⦃ Eq (Effect.C ε₂) ⦄ → Eq (Effect.C (ε₁ :+: ε₂))
+  does (_==_ ⦃ effectSumEq ⦄ (inj₁ c₁) (inj₁ c₂)) with c₁ == c₂
+  ... | eq because _ = eq
+  proof (_==_ ⦃ effectSumEq ⦄ (inj₁ c₁) (inj₁ c₂)) with c₁ == c₂
+  ... | no ¬p = ofⁿ λ {refl → ¬p refl}
+  ... | yes refl = ofʸ refl
+  does (_==_ ⦃ effectSumEq ⦄ (inj₁ _) (inj₂ _)) = false
+  proof (_==_ ⦃ effectSumEq ⦄ (inj₁ _) (inj₂ _)) = ofⁿ λ ()
+  does (_==_ ⦃ effectSumEq ⦄ (inj₂ _) (inj₁ _)) = false
+  proof (_==_ ⦃ effectSumEq ⦄ (inj₂ _) (inj₁ _)) = ofⁿ λ ()
+  does (_==_ ⦃ effectSumEq ⦄ (inj₂ c₁) (inj₂ c₂)) with c₁ == c₂
+  ... | eq because _ = eq
+  proof (_==_ ⦃ effectSumEq ⦄ (inj₂ c₁) (inj₂ c₂)) with c₁ == c₂
+  ... | no ¬p = ofⁿ λ {refl → ¬p refl}
+  ... | yes refl = ofʸ refl
