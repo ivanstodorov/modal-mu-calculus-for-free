@@ -4,12 +4,15 @@ open import Common.Effect
 open import Common.Free
 open import Common.Program
 open import Data.Bool using (Bool; if_then_else_)
-open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Empty using (⊥) renaming (⊥-elim to ⊥-elim₀)
+open import Data.Empty.Polymorphic using (⊥-elim)
 open import Data.Nat using (ℕ; zero; suc; _≟_)
 open import Data.Product using (_,_)
 open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using (⊤; tt)
+open import Data.Unit using (⊤) renaming (tt to tt₀)
+open import Data.Unit.Polymorphic using (tt)
 open import Function.Base using (const; id)
+open import Level using (lift)
 open import ModalLogics.HennessyMilnerLogic.Base
 open import Relation.Binary.PropositionalEquality.Core using (_≡_; refl; _≢_)
 open import Relation.Nullary using (does; proof; yes; no; ofʸ; ofⁿ)
@@ -51,10 +54,10 @@ instance
 
 testProgram : program (authEffect :+: exceptionEffect) ℕ (const ⊤)
 testProgram n = do
-  b ← step (inj₁ (login n)) pure
+  lift b ← step (inj₁ (login n)) pure
   ( if b
-    then step (inj₁ logout) pure
-    else step (inj₂ tt) ⊥-elim )
+    then step (inj₁ logout) (λ (lift h) → pure h)
+    else step (inj₂ tt₀) (λ (lift h) → ⊥-elim₀ h) )
 
 property₁ : Formula (authEffect :+: exceptionEffect)
 property₁ = [ inj₁ logout ] false
@@ -66,44 +69,44 @@ property₂ : Formula (authEffect :+: exceptionEffect)
 property₂ = ⟨ inj₁ (login 0) ⟩ ⟨ inj₁ logout ⟩ true
 
 test₂ : property₂ ⊢ testProgram ! 0
-test₂ = Bool.true , tt , tt
+test₂ = lift Bool.true , tt , tt
 
 property₃ : Formula (authEffect :+: exceptionEffect)
 property₃ = ⟨ inj₁ (login 0) ⟩ [ inj₁ (login 0) ] true
 
 test₃ : property₃ ⊢ testProgram ! 0
-test₃ = Bool.false , tt
+test₃ = lift Bool.false , tt
 
 property₄ : Formula (authEffect :+: exceptionEffect)
 property₄ = ⟨ inj₁ (login 0) ⟩ [ inj₁ logout ] false
 
 test₄ : property₄ ⊢ testProgram ! 0
-test₄ = Bool.false , tt
+test₄ = lift Bool.false , tt
 
 property₅ : Formula (authEffect :+: exceptionEffect)
-property₅ = [ inj₁ (login 0) ] [ inj₂ tt ] false
+property₅ = [ inj₁ (login 0) ] [ inj₂ tt₀ ] false
 
 test₅ : property₅ ⊢ testProgram ! 0
-test₅ Bool.false = ⊥-elim
-test₅ Bool.true = tt
+test₅ (lift Bool.false) = ⊥-elim
+test₅ (lift Bool.true) = tt
 
 property₆ : Formula (authEffect :+: exceptionEffect)
-property₆ = [ inj₁ (login 0) ] [ inj₂ tt ] true
+property₆ = [ inj₁ (login 0) ] [ inj₂ tt₀ ] true
 
 test₆ : property₆ ⊢ testProgram ! 0
-test₆ Bool.false = ⊥-elim
-test₆ Bool.true = tt
+test₆ (lift Bool.false) = ⊥-elim
+test₆ (lift Bool.true) = tt
 
 property₇ : (n : ℕ) → Formula (authEffect :+: exceptionEffect)
 property₇ n = [ inj₁ (login n) ] false
 
 test₇ : ∀ (n : ℕ) → n ≢ 0 → property₇ n ⊢ testProgram ! 0
-test₇ zero h = ⊥-elim (h refl)
+test₇ zero h = ⊥-elim₀ (h refl)
 test₇ (suc _) h = tt
 
 property₈ : (c : Effect.C (authEffect :+: exceptionEffect)) → Formula (authEffect :+: exceptionEffect)
 property₈ c = ⟨ inj₁ (login 0) ⟩ (([ c ] true) ∧ ([ c ] false))
 
 test₈ : ∀ c → property₈ c ⊢ testProgram ! 0
-test₈ (inj₁ _) = Bool.false , tt , tt
-test₈ (inj₂ _) = Bool.false , (const tt) , ⊥-elim
+test₈ (inj₁ _) = lift Bool.false , tt , tt
+test₈ (inj₂ _) = lift Bool.false , (const tt) , ⊥-elim
