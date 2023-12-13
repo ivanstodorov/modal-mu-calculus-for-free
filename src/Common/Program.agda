@@ -1,3 +1,4 @@
+{-# OPTIONS --overlapping-instances #-}
 module Common.Program where
 
 open import Common.Effect
@@ -5,8 +6,11 @@ open import Common.Free
 open import Data.Maybe using (Maybe; just; nothing; maybe)
 open import Data.Nat using (ℕ; zero; suc)
 open import Data.Sum using (inj₁; inj₂)
-open import Function.Base using (_∘_)
+open import Function using (_∘_)
 open import Level using (Level; lift)
+
+open Effect
+open _:<:_
 
 private variable
   ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ ℓ₅ : Level
@@ -18,8 +22,14 @@ data RecursionOperations (I : Set ℓ) : Set ℓ where
   call : I → RecursionOperations I
 
 recursionEffect : (I : Set ℓ₁) → (I → Set ℓ₂) → Effect
-Effect.C (recursionEffect I _) = RecursionOperations I
-Effect.R (recursionEffect _ O) (call i) = O i
+C (recursionEffect I _) = RecursionOperations I
+R (recursionEffect _ O) (call i) = O i
+
+callC : {ε : Effect {ℓ₁} {ℓ₂}} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ⦃ recursionEffect I O :<: ε ⦄ → I → C ε
+callC ⦃ inst ⦄ = (injC inst) ∘ call
+
+callF : {ε : Effect {ℓ₁} {ℓ₂}} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ⦃ recursionEffect I O :<: ε ⦄ → (i : I) → Free ε (O i)
+callF ⦃ inst ⦄ i = step (callC i) (pure ∘ projR inst)
 
 recursiveProgram : Effect {ℓ₁} {ℓ₂} → (I : Set ℓ₃) → (I → Set ℓ₄) → Set _
 recursiveProgram ε I O = (i : I) → Free (recursionEffect I O :+: ε) (O i)
