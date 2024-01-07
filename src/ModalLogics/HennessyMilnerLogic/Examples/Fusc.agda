@@ -9,18 +9,24 @@ open import Data.Maybe using (just)
 open import Data.Nat using (ℕ; zero; suc)
 open import Function using (const)
 open import Level using (0ℓ)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Relation.Binary.Definitions using (Decidable)
+open import Relation.Binary.PropositionalEquality using (_≡_) renaming (refl to refl')
+open import Relation.Binary.PropositionalEquality.Properties using (isDecEquivalence)
+open import Relation.Binary.Structures using (IsDecEquivalence)
 
 open Effect
-open Eq ⦃...⦄
+open IsDecEquivalence ⦃...⦄
 
-emptyEffect : Effect {_} {0ℓ}
+emptyEffect : Effect 0ℓ 0ℓ
 C emptyEffect = ⊥
 R emptyEffect ()
 
 instance
-  emptyEffectEq : Eq (C emptyEffect)
-  _==_ ⦃ emptyEffectEq ⦄ ()
+  emptyEffectEqIsDecEq : IsDecEquivalence {A = C emptyEffect} _≡_
+  emptyEffectEqIsDecEq = isDecEquivalence emptyEffectEqDec
+    where
+    emptyEffectEqDec : Decidable {A = C emptyEffect} _≡_
+    emptyEffectEqDec ()
 
 fusc : recursiveProgram emptyEffect ℕ (const ℕ)
 fusc zero = pure zero
@@ -30,4 +36,4 @@ fusc (suc n) = do
   pure (suc ffn)
 
 test : (recursionHandler fusc 3) 3 ≡ pure (just 3)
-test = refl
+test = refl'
