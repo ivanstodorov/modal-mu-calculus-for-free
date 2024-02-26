@@ -1,29 +1,34 @@
-{-# OPTIONS --overlapping-instances #-}
+{-# OPTIONS --without-K --overlapping-instances #-}
 module ModalLogics.HennessyMilnerLogic.Examples.Authentication where
 
-open import Common.Effect
-open import Common.Free
-open import Common.Program
+open import Common.Container using (_:+:_; _:<:_)
+open import Common.Program using (Program)
 open import Data.Bool using (Bool; if_then_else_)
+open import Data.Container using (Container)
+open import Data.Container.FreeMonad using (_⋆_; _>>=_)
 open import Data.Empty using (⊥) renaming (⊥-elim to ⊥-elim₀)
 open import Data.Empty.Polymorphic using (⊥-elim)
-open import Data.Nat using (ℕ; zero; suc; _≟_)
+open import Data.Nat using (ℕ; _≟_)
 open import Data.Product using (_,_)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤) renaming (tt to tt₀)
 open import Data.Unit.Polymorphic using (tt)
-open import Function using (_∘_; const; id)
+open import Function using (_∘_; const)
 open import Level using (Level; 0ℓ; lift)
-open import ModalLogics.HennessyMilnerLogic.Base
+open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _!_⊩_)
 open import Relation.Binary.Definitions using (Decidable)
-open import Relation.Binary.PropositionalEquality using (_≡_; _≢_) renaming (refl to refl')
-open import Relation.Binary.PropositionalEquality.Properties using (isDecEquivalence)
+open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; isDecEquivalence)
 open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using (does; proof; yes; no; ofʸ; ofⁿ; _because_)
+open import Relation.Nullary using (does; proof; yes; no; ofʸ; ofⁿ)
 
-open Effect
 open _:<:_
-open IsDecEquivalence ⦃...⦄
+open Bool
+open Container
+open _⋆_
+open ℕ
+open Formula
+open _≡_
+open IsDecEquivalence ⦃...⦄ hiding (refl; _≟_)
 
 private variable
   ℓ₁ ℓ₂ ℓ₃ : Level
@@ -32,114 +37,117 @@ data AuthOperations : Set where
   login : ℕ → AuthOperations
   logout : AuthOperations
 
-authEffect : Effect 0ℓ 0ℓ
-C authEffect = AuthOperations
-R authEffect (login _) = Bool
-R authEffect logout = ⊤
+authEffect : Container 0ℓ 0ℓ
+Shape authEffect = AuthOperations
+Position authEffect (login _) = Bool
+Position authEffect logout = ⊤
 
 instance
-  authEffectEqIsDecEq : IsDecEquivalence {A = C authEffect} _≡_
+  authEffectEqIsDecEq : IsDecEquivalence {A = Shape authEffect} _≡_
   authEffectEqIsDecEq = isDecEquivalence authEffectEqDec
     where
-    authEffectEqDec : Decidable {A = C authEffect} _≡_
-    does (authEffectEqDec (login n₁) (login n₂)) with Data.Nat._≟_ n₁ n₂
-    ... | no _ = Bool.false
-    ... | yes _ = Bool.true
-    does (authEffectEqDec (login _) logout) = Bool.false
-    does (authEffectEqDec logout (login _)) = Bool.false
-    does (authEffectEqDec logout logout) = Bool.true
-    proof (authEffectEqDec (login n₁) (login n₂)) with Data.Nat._≟_ n₁ n₂
-    ... | no ¬p = ofⁿ λ {refl' → ¬p refl'}
-    ... | yes refl' = ofʸ refl'
+    authEffectEqDec : Decidable {A = Shape authEffect} _≡_
+    does (authEffectEqDec (login n₁) (login n₂)) with n₁ ≟ n₂
+    ... | no _ = false
+    ... | yes _ = true
+    does (authEffectEqDec (login _) logout) = false
+    does (authEffectEqDec logout (login _)) = false
+    does (authEffectEqDec logout logout) = true
+    proof (authEffectEqDec (login n₁) (login n₂)) with n₁ ≟ n₂
+    ... | no ¬p = ofⁿ λ { refl → ¬p refl }
+    ... | yes refl = ofʸ refl
     proof (authEffectEqDec (login _) logout) = ofⁿ λ ()
     proof (authEffectEqDec logout (login _)) = ofⁿ λ ()
-    proof (authEffectEqDec logout logout) = ofʸ refl'
+    proof (authEffectEqDec logout logout) = ofʸ refl
 
-loginC : {ε : Effect ℓ₁ ℓ₂} → ⦃ authEffect :<: ε ⦄ → ℕ → C ε
-loginC ⦃ inst ⦄ = (injC inst) ∘ login
+loginS : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → ℕ → Shape C
+loginS _ ⦃ inst ⦄ = (injS inst) ∘ login
 
-loginF : {ε : Effect ℓ₁ ℓ₂} → ⦃ authEffect :<: ε ⦄ → ℕ → Free ε Bool
-loginF ⦃ inst ⦄ n = step (loginC n) (pure ∘ projR inst)
+loginF : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → ℕ → C ⋆ Bool
+loginF C ⦃ inst ⦄ n = impure (loginS C n , pure ∘ projP inst)
 
-logoutC : {ε : Effect ℓ₁ ℓ₂} → ⦃ authEffect :<: ε ⦄ → C ε
-logoutC ⦃ inst ⦄ = injC inst logout
+logoutS : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → Shape C
+logoutS _ ⦃ inst ⦄ = injS inst logout
 
-logoutF : {ε : Effect ℓ₁ ℓ₂} → ⦃ authEffect :<: ε ⦄ → Free ε ⊤
-logoutF ⦃ inst ⦄ = step logoutC (pure ∘ projR inst)
+logoutF : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → C ⋆ ⊤
+logoutF C ⦃ inst ⦄ = impure (logoutS C , pure ∘ projP inst)
 
-exceptionEffect : Effect 0ℓ 0ℓ
-C exceptionEffect = ⊤
-R exceptionEffect _ = ⊥
+exceptionEffect : Container 0ℓ 0ℓ
+Shape exceptionEffect = ⊤
+Position exceptionEffect _ = ⊥
 
 instance
-  exceptionEffectEqIsDecEq : IsDecEquivalence {A = C exceptionEffect} _≡_
+  exceptionEffectEqIsDecEq : IsDecEquivalence {A = Shape exceptionEffect} _≡_
   exceptionEffectEqIsDecEq = isDecEquivalence exceptionEffectEqDec
     where
-    exceptionEffectEqDec : Decidable {A = C exceptionEffect} _≡_
-    does (exceptionEffectEqDec tt tt) = Bool.true
-    proof (exceptionEffectEqDec tt tt) = ofʸ refl'
+    exceptionEffectEqDec : Decidable {A = Shape exceptionEffect} _≡_
+    does (exceptionEffectEqDec tt₀ tt₀) = true
+    proof (exceptionEffectEqDec tt₀ tt₀) = ofʸ refl
 
-exceptionC : {ε : Effect ℓ₁ ℓ₂} → ⦃ exceptionEffect :<: ε ⦄ → C ε
-exceptionC ⦃ inst ⦄ = injC inst tt₀
+exceptionS : (C : Container ℓ₁ ℓ₂) → ⦃ exceptionEffect :<: C ⦄ → Shape C
+exceptionS _ ⦃ inst ⦄ = injS inst tt₀
 
-exceptionF : {ε : Effect ℓ₁ ℓ₂} → {α : Set ℓ₃} → ⦃ exceptionEffect :<: ε ⦄ → Free ε α
-exceptionF ⦃ inst ⦄ = step exceptionC (⊥-elim₀ ∘ projR inst)
+exceptionF : (C : Container ℓ₁ ℓ₂) → ⦃ exceptionEffect :<: C ⦄ → {α : Set ℓ₃} → C ⋆ α
+exceptionF C ⦃ inst ⦄ = impure (exceptionS C , ⊥-elim₀ ∘ projP inst)
 
-testProgram : program (authEffect :+: exceptionEffect) ℕ (const ⊤)
+e : Container 0ℓ 0ℓ
+e = authEffect :+: exceptionEffect
+
+testProgram : Program e ℕ (const ⊤)
 testProgram n = do
-  b ← loginF n
+  b ← loginF e n
   ( if b
-    then logoutF
-    else exceptionF )
+    then logoutF e
+    else exceptionF e )
 
-property₁ : Formula (authEffect :+: exceptionEffect)
-property₁ = [ logoutC ] false
+property₁ : Formula e
+property₁ = [ logoutS e ] false
 
-test₁ : property₁ ⊢ testProgram ! 0
+test₁ : 0 ! property₁ ⊩ testProgram
 test₁ = tt
 
-property₂ : Formula (authEffect :+: exceptionEffect)
-property₂ = ⟨ loginC 0 ⟩ ⟨ logoutC ⟩ true
+property₂ : Formula e
+property₂ = ⟨ loginS e 0 ⟩ ⟨ logoutS e ⟩ true
 
-test₂ : property₂ ⊢ testProgram ! 0
+test₂ : 0 ! property₂ ⊩ testProgram
 test₂ = lift Bool.true , tt , tt
 
-property₃ : Formula (authEffect :+: exceptionEffect)
-property₃ = ⟨ loginC 0 ⟩ [ loginC 0 ] true
+property₃ : Formula e
+property₃ = ⟨ loginS e 0 ⟩ [ loginS e 0 ] true
 
-test₃ : property₃ ⊢ testProgram ! 0
+test₃ : 0 ! property₃ ⊩ testProgram
 test₃ = lift Bool.false , tt
 
-property₄ : Formula (authEffect :+: exceptionEffect)
-property₄ = ⟨ loginC 0 ⟩ [ logoutC ] false
+property₄ : Formula e
+property₄ = ⟨ loginS e 0 ⟩ [ logoutS e ] false
 
-test₄ : property₄ ⊢ testProgram ! 0
+test₄ : 0 ! property₄ ⊩ testProgram
 test₄ = lift Bool.false , tt
 
-property₅ : Formula (authEffect :+: exceptionEffect)
-property₅ = [ loginC 0 ] [ exceptionC ] false
+property₅ : Formula e
+property₅ = [ loginS e 0 ] [ exceptionS e ] false
 
-test₅ : property₅ ⊢ testProgram ! 0
+test₅ : 0 ! property₅ ⊩ testProgram
 test₅ (lift Bool.false) = ⊥-elim
 test₅ (lift Bool.true) = tt
 
-property₆ : Formula (authEffect :+: exceptionEffect)
-property₆ = [ loginC 0 ] [ exceptionC ] true
+property₆ : Formula e
+property₆ = [ loginS e 0 ] [ exceptionS e ] true
 
-test₆ : property₆ ⊢ testProgram ! 0
+test₆ : 0 ! property₆ ⊩ testProgram
 test₆ (lift Bool.false) = ⊥-elim
 test₆ (lift Bool.true) = tt
 
-property₇ : ℕ → Formula (authEffect :+: exceptionEffect)
-property₇ n = [ loginC n ] false
+property₇ : ℕ → Formula e
+property₇ n = [ loginS e n ] false
 
-test₇ : ∀ (n : ℕ) → n ≢ 0 → property₇ n ⊢ testProgram ! 0
-test₇ zero h = ⊥-elim₀ (h refl')
+test₇ : ∀ (n : ℕ) → n ≢ 0 → 0 ! property₇ n ⊩ testProgram
+test₇ zero h = ⊥-elim₀ (h refl)
 test₇ (suc _) h = tt
 
-property₈ : (c : C (authEffect :+: exceptionEffect)) → Formula (authEffect :+: exceptionEffect)
-property₈ c = ⟨ loginC 0 ⟩ ([ c ] true) ∧ ([ c ] false)
+property₈ : Shape e → Formula e
+property₈ c = ⟨ loginS e 0 ⟩ ([ c ] true) ∧ ([ c ] false)
 
-test₈ : ∀ c → property₈ c ⊢ testProgram ! 0
+test₈ : ∀ c → 0 ! property₈ c ⊩ testProgram
 test₈ (inj₁ _) = lift Bool.false , tt , tt
 test₈ (inj₂ _) = lift Bool.false , (const tt) , ⊥-elim

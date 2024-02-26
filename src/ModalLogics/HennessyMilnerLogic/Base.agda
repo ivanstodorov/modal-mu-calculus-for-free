@@ -1,11 +1,12 @@
+{-# OPTIONS --without-K #-}
 module ModalLogics.HennessyMilnerLogic.Base where
 
-open import Common.Effect
-open import Common.Free
-open import Common.Program
+open import Common.Program using (Program; RecursiveProgram; recursionHandler)
+open import Data.Container using (Container; Shape)
+open import Data.Container.FreeMonad using (_⋆_)
 open import Data.Empty.Polymorphic using (⊥)
 open import Data.Nat using (ℕ)
-open import Data.Product using (_×_; ∃-syntax)
+open import Data.Product using (_×_; _,_; ∃-syntax)
 open import Data.Sum using (_⊎_)
 open import Data.Unit.Polymorphic using (⊤)
 open import Level using (Level)
@@ -13,18 +14,12 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
 open import Relation.Nullary using (¬_; yes; no; _because_; Dec)
 
-open Effect
-open Dec ⦃...⦄
+open _⋆_
 open IsDecEquivalence ⦃...⦄
+open Dec ⦃...⦄
 
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
-
-data Formula (ε : Effect ℓ₁ ℓ₂) : Set ℓ₁ where
-  true false : Formula ε
-  ~_ : Formula ε → Formula ε
-  _∧_ _∨_ _⇒_ : Formula ε → Formula ε → Formula ε
-  ⟨_⟩_ [_]_ : C ε → Formula ε → Formula ε
 
 infix 40 ~_
 infixr 35 _∧_
@@ -33,45 +28,51 @@ infixr 35 _⇒_
 infix 30 ⟨_⟩_
 infix 30 [_]_
 
-_⊢_ : {ε : Effect ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = C ε} _≡_ ⦄ → {α : Set ℓ₃} → Formula ε → Free ε α → Set ℓ₂
-true ⊢ x = ⊤
-false ⊢ x = ⊥
-(~ f) ⊢ x = ¬ (f ⊢ x)
-(f₁ ∧ f₂) ⊢ x = f₁ ⊢ x × f₂ ⊢ x
-(f₁ ∨ f₂) ⊢ x = f₁ ⊢ x ⊎ f₂ ⊢ x
-(f₁ ⇒ f₂) ⊢ x = f₁ ⊢ x → f₂ ⊢ x
-(⟨ _ ⟩ _) ⊢ pure _ = ⊥
-(⟨ c₁ ⟩ f) ⊢ step c₂ k with c₁ ≟ c₂
-... | no _ = ⊥
-... | yes _ = ∃[ r ] f ⊢ k r
-([ _ ] _) ⊢ pure _ = ⊤
-([ c₁ ] f) ⊢ step c₂ k with c₁ ≟ c₂
-... | no _ = ⊤
-... | yes _ = ∀ r → f ⊢ k r
+data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
+  true false : Formula C
+  ~_ : Formula C → Formula C
+  _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
+  ⟨_⟩_ [_]_ : Shape C → Formula C → Formula C
 
-infix 25 _⊢_
+infix 25 _⊩_
+
+_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set ℓ₂
+true ⊩ _ = ⊤
+false ⊩ _ = ⊥
+(~ f) ⊩ x = ¬ (f ⊩ x)
+(f₁ ∧ f₂) ⊩ x = f₁ ⊩ x × f₂ ⊩ x
+(f₁ ∨ f₂) ⊩ x = f₁ ⊩ x ⊎ f₂ ⊩ x
+(f₁ ⇒ f₂) ⊩ x = f₁ ⊩ x → f₂ ⊩ x
+(⟨ _ ⟩ _) ⊩ pure _ = ⊥
+(⟨ s₁ ⟩ f) ⊩ impure (s₂ , c) with s₁ ≟ s₂
+... | no _ = ⊥
+... | yes _ = ∃[ p ] f ⊩ c p
+([ _ ] _) ⊩ pure _ = ⊤
+([ s₁ ] f) ⊩ impure (s₂ , c) with s₁ ≟ s₂
+... | no _ = ⊤
+... | yes _ = ∀ p → f ⊩ c p
 
 postulate
-  ⊢-dec : {ε : Effect ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = C ε} _≡_ ⦄ → {α : Set ℓ₃} → (f : Formula ε) → (x : Free ε α) → Dec (f ⊢ x)
+  ⊩-dec : {C : Container ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → (f : Formula C) → (x : C ⋆ α) → Dec (f ⊩ x)
 
-_⊢_!_ : {ε : Effect ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = C ε} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula ε → program ε I O → I → Set ℓ₂
-f ⊢ x ! i = f ⊢ (x i)
+infix 25 _!_⊩_
 
-infix 25 _⊢_!_
+_!_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → Formula C → Program C I O → Set ℓ₂
+i ! f ⊩ x = f ⊩ (x i)
 
-⊢-decP : {ε : Effect ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = C ε} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → (f : Formula ε) → (x : program ε I O) → (i : I) → Dec (f ⊢ x ! i)
-does ⦃ ⊢-decP f x i ⦄ with ⊢-dec f (x i)
+⊩-decP : {C : Container ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → (i : I) → (f : Formula C) → (x : Program C I O) → Dec (i ! f ⊩ x)
+does ⦃ ⊩-decP i f x ⦄ with ⊩-dec f (x i)
 ... | does because _ = does
-proof ⦃ ⊢-decP f x i ⦄ with ⊢-dec f (x i)
+proof ⦃ ⊩-decP i f x ⦄ with ⊩-dec f (x i)
 ... | _ because proof = proof
 
-_▸_⊢_!_ : {ε : Effect ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = C ε} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ℕ → Formula ε → recursiveProgram ε I O → I → Set ℓ₂
-n ▸ f ⊢ x ! i = f ⊢ (recursionHandler x n) i
+infix 25 _▸_!_⊩_
 
-infix 25 _▸_⊢_!_
+_▸_!_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ℕ → I → Formula C → RecursiveProgram C I O → Set ℓ₂
+n ▸ i ! f ⊩ x = f ⊩ (recursionHandler x n) i
 
-⊢-decR : {ε : Effect ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = C ε} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → (n : ℕ) → (f : Formula ε) → (x : recursiveProgram ε I O) → (i : I) → Dec (n ▸ f ⊢ x ! i)
-does ⦃ ⊢-decR n f x i ⦄ with ⊢-dec f ((recursionHandler x n) i)
+⊩-decR : {C : Container ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → (n : ℕ) → (i : I) → (f : Formula C) → (x : RecursiveProgram C I O) → Dec (n ▸ i ! f ⊩ x)
+does ⦃ ⊩-decR n i f x ⦄ with ⊩-dec f ((recursionHandler x n) i)
 ... | does because _ = does
-proof ⦃ ⊢-decR n f x i ⦄ with ⊢-dec f ((recursionHandler x n) i)
+proof ⦃ ⊩-decR n i f x ⦄ with ⊩-dec f ((recursionHandler x n) i)
 ... | _ because proof = proof
