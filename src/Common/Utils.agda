@@ -13,7 +13,7 @@ open _⋆_
 open IsDecEquivalence ⦃...⦄
 
 private variable
-  ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  ℓ ℓ₁ ℓ₂ ℓ₃ : Level
 
 infix 20 _⇔_
 
@@ -35,13 +35,13 @@ data ModalitySequence (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   ⟦_⟧_ : Shape C → ModalitySequence C → ModalitySequence C
   ε : ModalitySequence C
 
-unfold : {C : Container ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → ModalitySequence C → C ⋆ α → (Maybe' (C ⋆ α) → Set (ℓ₂ ⊔ ℓ₄)) → Set (ℓ₂ ⊔ ℓ₄)
+unfold : {C : Container ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → ModalitySequence C → C ⋆ α → (Maybe' (C ⋆ α) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold (⟪ _ ⟫ _) (pure _) f = f fail
-unfold {ℓ₄ = ℓ} (⟪ s₁ ⟫ m) (impure (s₂ , c)) f with s₁ ≟ s₂
+unfold (⟪ s₁ ⟫ m) (impure (s₂ , c)) f with s₁ ≟ s₂
 ... | no _ = f fail
-... | yes _ = ∃[ p ] unfold {ℓ₄ = ℓ} m (c p) f
+... | yes _ = ∃[ p ] unfold m (c p) f
 unfold (⟦ _ ⟧ _) (pure _) f = f done
-unfold {ℓ₄ = ℓ} (⟦ s₁ ⟧ m) (impure (s₂ , c)) f with s₁ ≟ s₂
+unfold (⟦ s₁ ⟧ m) (impure (s₂ , c)) f with s₁ ≟ s₂
 ... | no _ = f done
-... | yes _ = ∀ p → unfold {ℓ₄ = ℓ} m (c p) f
+... | yes _ = ∀ p → unfold m (c p) f
 unfold ε x f = f (val x)

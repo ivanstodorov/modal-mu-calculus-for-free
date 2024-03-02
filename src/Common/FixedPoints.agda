@@ -3,7 +3,7 @@ module Common.FixedPoints where
 
 open import Common.Utils using (Maybe')
 open import Data.Empty.Polymorphic using (⊥)
-open import Data.Fin using (fromℕ<)
+open import Data.Fin using (Fin; fromℕ<)
 open import Data.List using (List; lookup)
 open import Data.List.NonEmpty using (List⁺; _∷_; length; toList)
 open import Data.Maybe using (Maybe)
@@ -18,7 +18,7 @@ open Maybe'
 open Maybe
 
 private variable
-  ℓ ℓ₁ ℓ₂ ℓ₃ : Level
+  ℓ : Level
 
 -- {-# NO_POSITIVITY_CHECK #-}
 -- data Mu {c : Container zero zero} {α : Set} (F : (Free c α → Set) → Free c α → Set) : Free c α → Set where
@@ -31,49 +31,45 @@ private variable
 --   field
 --     Ni : F (Nu F) x
 
-record IndexedContainer (I : Set ℓ₁) (ℓ₂ ℓ₃ : Level) : Set (suc (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) where
+record IndexedContainer (I : Set ℓ) : Set (suc ℓ) where
   constructor _▷_
   field
-    Shape : I → Set ℓ₁
-    Position : (i : I) → Shape i → Maybe' (I × Maybe ℕ) → Set ℓ₂
+    Shape : ℕ
+    Position : Fin (Shape) → I → Maybe' (I × Maybe ℕ) → Set ℓ
 
 data FixedPoint : Set where
   leastFP : FixedPoint
   greatestFP : FixedPoint
 
-⟦_⟧ᵢ : {I : Set ℓ₁} → (xs : List⁺ (FixedPoint × IndexedContainer I ℓ₂ ℓ₃)) → (Maybe' (I × Maybe ℕ) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' (I × Maybe ℕ) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' (I × Maybe ℕ) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+⟦_⟧ᵢ : {I : Set ℓ} → (xs : List⁺ (FixedPoint × IndexedContainer I)) → (Maybe' (I × Maybe ℕ) → Set ℓ) → (Maybe' (I × Maybe ℕ) → Set ℓ) → Maybe' (I × Maybe ℕ) → Set ℓ
 ⟦ xs ⟧ᵢ w m (val (i , just n)) with ℕ.suc n <? length xs
 ... | no _ = ⊥
 ... | yes h with fromℕ< h
 ...   | n with lookup (toList xs) n
-...     | leastFP , (S ▷ P) = Σ[ s ∈ S i ] ∀[ P i s ⇒ w ]
-...     | greatestFP , (S ▷ P) = Σ[ s ∈ S i ] ∀[ P i s ⇒ m ]
-⟦ (leastFP , (S ▷ P)) ∷ _ ⟧ᵢ w _ (val (i , nothing)) = Σ[ s ∈ S i ] ∀[ P i s ⇒ w ]
-⟦ (greatestFP , (S ▷ P)) ∷ _ ⟧ᵢ _ m (val (i , nothing)) = Σ[ s ∈ S i ] ∀[ P i s ⇒ m ]
+...     | leastFP , (S ▷ P) = Σ[ s ∈ Fin S ] ∀[ P s i ⇒ w ]
+...     | greatestFP , (S ▷ P) = Σ[ s ∈ Fin S ] ∀[ P s i ⇒ m ]
+⟦ (leastFP , (S ▷ P)) ∷ _ ⟧ᵢ w _ (val (i , nothing)) = Σ[ s ∈ Fin S ] ∀[ P s i ⇒ w ]
+⟦ (greatestFP , (S ▷ P)) ∷ _ ⟧ᵢ _ m (val (i , nothing)) = Σ[ s ∈ Fin S ] ∀[ P s i ⇒ m ]
 ⟦ _ ⟧ᵢ _ _ done = ⊤
 ⟦ _ ⟧ᵢ _ _ fail = ⊥
 
--- data WI' {I : Set ℓ₁} (xs : List⁺ (FixedPoint × IndexedContainer I ℓ₂ ℓ₃)) : Maybe' (I × Maybe ℕ) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record WI' {I : Set ℓ₁} (_ : List⁺ (FixedPoint × IndexedContainer I ℓ₂ ℓ₃)) (_ : Maybe' (I × Maybe ℕ)) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record MI' {I : Set ℓ₁} (_ : List⁺ (FixedPoint × IndexedContainer I ℓ₂ ℓ₃)) (_ : Maybe' (I × Maybe ℕ)) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-
--- data WI' xs where
---   In : ∀[ ⟦ xs ⟧ᵢ (WI' xs) (MI' xs) ⇒ WI' xs ]
+record WI' {I : Set ℓ} (_ : List⁺ (FixedPoint × IndexedContainer I)) (_ : Maybe' (I × Maybe ℕ)) : Set ℓ
+record MI' {I : Set ℓ} (_ : List⁺ (FixedPoint × IndexedContainer I)) (_ : Maybe' (I × Maybe ℕ)) : Set ℓ
 
 record WI' xs n where
   inductive
-  constructor In
+  constructor wi
   field
     In : ⟦ xs ⟧ᵢ (WI' xs) (MI' xs) n
 
 record MI' xs n where
   coinductive
-  constructor Ni
+  constructor mi
   field
     Ni : ⟦ xs ⟧ᵢ (WI' xs) (MI' xs) n
 
-WI : {I : Set ℓ₁} → IndexedContainer I ℓ₂ ℓ₃ → List (FixedPoint × IndexedContainer I ℓ₂ ℓ₃) → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+WI : {I : Set ℓ} → IndexedContainer I → List (FixedPoint × IndexedContainer I) → I → Set ℓ
 WI x xs i = WI' ((leastFP , x) ∷ xs) (val (i , nothing))
 
-MI : {I : Set ℓ₁} → IndexedContainer I ℓ₂ ℓ₃ → List (FixedPoint × IndexedContainer I ℓ₂ ℓ₃) → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+MI : {I : Set ℓ} → IndexedContainer I → List (FixedPoint × IndexedContainer I) → I → Set ℓ
 MI x xs i = MI' ((greatestFP , x) ∷ xs) (val (i , nothing))

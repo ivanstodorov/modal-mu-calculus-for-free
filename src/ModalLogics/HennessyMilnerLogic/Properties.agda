@@ -1,31 +1,49 @@
 {-# OPTIONS --without-K #-}
 module ModalLogics.HennessyMilnerLogic.Properties where
 
+open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Common.Utils using (_⇔_)
 open import Data.Container using (Container; Shape)
 open import Data.Container.FreeMonad using (_⋆_)
 open import Data.Empty using () renaming (⊥-elim to ⊥-elim₀)
 open import Data.Empty.Polymorphic using (⊥-elim)
+open import Data.Nat using (ℕ)
 open import Data.Product using (_,_; proj₁; proj₂)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using (tt)
 open import Function using (_∘_; const; case_of_)
 open import Level using (Level; lift)
-open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _⊩_; ⊩-dec)
+open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _⊩_; _!_⊩_; _▸_!_⊩_)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using (yes; no)
+open import Relation.Nullary using (yes; no; _because_; Dec)
 
 open _⇔_
 open _⋆_
 open Formula
 open _≡_
 open IsDecEquivalence ⦃...⦄
+open Dec ⦃...⦄
 
 private variable
-  ℓ₁ ℓ₂ ℓ₃ : Level
+  ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
   C : Container ℓ₁ ℓ₂
   α : Set ℓ₃
+
+postulate
+  ⊩-dec : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f : Formula C) → (x : C ⋆ α) → Dec (f ⊩ x)
+
+⊩-decP : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → (i : I) → (f : Formula C) → (x : Program C I O) → Dec (i ! f ⊩ x)
+does ⦃ ⊩-decP i f x ⦄ with ⊩-dec f (x i)
+... | does because _ = does
+proof ⦃ ⊩-decP i f x ⦄ with ⊩-dec f (x i)
+... | _ because proof = proof
+
+⊩-decR : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → (n : ℕ) → (i : I) → (f : Formula C) → (x : RecursiveProgram C I O) → Dec (n ▸ i ! f ⊩ x)
+does ⦃ ⊩-decR n i f x ⦄ with ⊩-dec f ((recursionHandler x n) i)
+... | does because _ = does
+proof ⦃ ⊩-decR n i f x ⦄ with ⊩-dec f ((recursionHandler x n) i)
+... | _ because proof = proof
 
 -- Proposition Logic
 
