@@ -1,13 +1,12 @@
-{-# OPTIONS --without-K --guardedness #-}
-module ModalLogics.FixedPoints.Properties where
+{-# OPTIONS --without-K #-}
+module ModalLogics.ActionFormulas.Properties where
 
 open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Container using (Container; Shape)
 open import Data.Container.FreeMonad using (_⋆_)
-open import Data.Maybe using (Maybe)
 open import Data.Nat using (ℕ)
 open import Level using (Level)
-open import ModalLogics.FixedPoints.Base using (Formula; _⊩_; _⊩_!_; _▸_⊩_!_)
+open import ModalLogics.ActionFormulas.Base using (Formula; _⊩_; _⊩_!_; _▸_⊩_!_)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
 open import Relation.Nullary using (Dec; _because_)

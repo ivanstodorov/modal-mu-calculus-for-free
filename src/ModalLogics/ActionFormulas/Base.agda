@@ -1,7 +1,9 @@
 {-# OPTIONS --without-K --safe #-}
-module ModalLogics.HennessyMilnerLogic.Base where
+module ModalLogics.ActionFormulas.Base where
 
+open import Common.ActionFormulas using (ActionFormula; parseActF)
 open import Common.Program using (Program; RecursiveProgram; recursionHandler)
+open import Data.Bool using (true; false)
 open import Data.Container using (Container; Shape)
 open import Data.Container.FreeMonad using (_⋆_)
 open import Data.Empty.Polymorphic using (⊥)
@@ -12,7 +14,7 @@ open import Data.Unit.Polymorphic using (⊤)
 open import Level using (Level)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using (¬_; yes; no)
+open import Relation.Nullary using (¬_)
 
 open _⋆_
 open IsDecEquivalence ⦃...⦄
@@ -31,7 +33,7 @@ data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C
   ~_ : Formula C → Formula C
   _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
-  ⟨_⟩_ [_]_ : Shape C → Formula C → Formula C
+  ⟨_⟩_ [_]_ : ActionFormula C → Formula C → Formula C
 
 infix 25 _⊩_
 
@@ -43,13 +45,13 @@ f₁ ∧ f₂ ⊩ x = f₁ ⊩ x × f₂ ⊩ x
 f₁ ∨ f₂ ⊩ x = f₁ ⊩ x ⊎ f₂ ⊩ x
 f₁ ⇒ f₂ ⊩ x = f₁ ⊩ x → f₂ ⊩ x
 ⟨ _ ⟩ _ ⊩ pure _ = ⊥
-⟨ s₁ ⟩ f ⊩ impure (s₂ , c) with s₁ ≟ s₂
-... | no _ = ⊥
-... | yes _ = ∃[ p ] f ⊩ c p
+⟨ af ⟩ f ⊩ impure (s , c) with parseActF af s
+... | false = ⊥
+... | true = ∃[ p ] f ⊩ c p
 [ _ ] _ ⊩ pure _ = ⊤
-[ s₁ ] f ⊩ impure (s₂ , c) with s₁ ≟ s₂
-... | no _ = ⊤
-... | yes _ = ∀ p → f ⊩ c p
+[ af ] f ⊩ impure (s , c) with parseActF af s
+... | false = ⊤
+... | true = ∀ p → f ⊩ c p
 
 infix 25 _⊩_!_
 

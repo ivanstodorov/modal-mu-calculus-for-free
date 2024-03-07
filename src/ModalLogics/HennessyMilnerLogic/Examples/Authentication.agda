@@ -15,7 +15,7 @@ open import Data.Unit using (⊤) renaming (tt to tt₀)
 open import Data.Unit.Polymorphic using (tt)
 open import Function using (_∘_; const)
 open import Level using (Level; 0ℓ; lift)
-open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _!_⊩_)
+open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _⊩_!_)
 open import Relation.Binary.Definitions using (Decidable)
 open import Relation.Binary.PropositionalEquality using (_≡_; _≢_; isDecEquivalence)
 open import Relation.Binary.Structures using (IsDecEquivalence)
@@ -103,51 +103,51 @@ testProgram n = do
 property₁ : Formula e
 property₁ = [ logoutS e ] false
 
-test₁ : 0 ! property₁ ⊩ testProgram
+test₁ : property₁ ⊩ testProgram ! 0
 test₁ = tt
 
 property₂ : Formula e
 property₂ = ⟨ loginS e 0 ⟩ ⟨ logoutS e ⟩ true
 
-test₂ : 0 ! property₂ ⊩ testProgram
+test₂ : property₂ ⊩ testProgram ! 0
 test₂ = lift Bool.true , tt , tt
 
 property₃ : Formula e
 property₃ = ⟨ loginS e 0 ⟩ [ loginS e 0 ] true
 
-test₃ : 0 ! property₃ ⊩ testProgram
+test₃ : property₃ ⊩ testProgram ! 0
 test₃ = lift Bool.false , tt
 
 property₄ : Formula e
 property₄ = ⟨ loginS e 0 ⟩ [ logoutS e ] false
 
-test₄ : 0 ! property₄ ⊩ testProgram
+test₄ : property₄ ⊩ testProgram ! 0
 test₄ = lift Bool.false , tt
 
 property₅ : Formula e
 property₅ = [ loginS e 0 ] [ exceptionS e ] false
 
-test₅ : 0 ! property₅ ⊩ testProgram
+test₅ : property₅ ⊩ testProgram ! 0
 test₅ (lift Bool.false) = ⊥-elim
 test₅ (lift Bool.true) = tt
 
 property₆ : Formula e
 property₆ = [ loginS e 0 ] [ exceptionS e ] true
 
-test₆ : 0 ! property₆ ⊩ testProgram
+test₆ : property₆ ⊩ testProgram ! 0
 test₆ (lift Bool.false) = ⊥-elim
 test₆ (lift Bool.true) = tt
 
 property₇ : ℕ → Formula e
 property₇ n = [ loginS e n ] false
 
-test₇ : ∀ (n : ℕ) → n ≢ 0 → 0 ! property₇ n ⊩ testProgram
+test₇ : ∀ (n : ℕ) → n ≢ 0 → property₇ n ⊩ testProgram ! 0
 test₇ zero h = ⊥-elim₀ (h refl)
 test₇ (suc _) h = tt
 
 property₈ : Shape e → Formula e
 property₈ c = ⟨ loginS e 0 ⟩ ([ c ] true) ∧ ([ c ] false)
 
-test₈ : ∀ c → 0 ! property₈ c ⊩ testProgram
+test₈ : ∀ c → property₈ c ⊩ testProgram ! 0
 test₈ (inj₁ _) = lift Bool.false , tt , tt
 test₈ (inj₂ _) = lift Bool.false , (const tt) , ⊥-elim
