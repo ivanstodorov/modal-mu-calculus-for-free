@@ -47,35 +47,35 @@ proof ⦃ ⊩-decR n f x i ⦄ with ⊩-dec f ((recursionHandler x n) i)
 
 -- Proposition Logic
 
--- Theorems for ~_
+-- Theorems for ¬_
 
-~true⇔false : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (x : C ⋆ α) → ~ true ⊩ x ⇔ false ⊩ x
-to (~true⇔false _) h = ⊥-elim₀ (h tt)
-from (~true⇔false _) h = ⊥-elim h
+¬true⇔false : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (x : C ⋆ α) → ¬ true ⊩ x ⇔ false ⊩ x
+to (¬true⇔false _) h = ⊥-elim₀ (h tt)
+from (¬true⇔false _) h = ⊥-elim h
 
-~false⇔true : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (x : C ⋆ α) → ~ false ⊩ x ⇔ true ⊩ x
-to (~false⇔true _) _ = tt
-from (~false⇔true _) _ h = ⊥-elim h
+¬false⇔true : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (x : C ⋆ α) → ¬ false ⊩ x ⇔ true ⊩ x
+to (¬false⇔true _) _ = tt
+from (¬false⇔true _) _ h = ⊥-elim h
 
-~~f⇔f : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f : Formula C) → (x : C ⋆ α) → ~ ~ f ⊩ x ⇔ f ⊩ x
-to (~~f⇔f f x) ¬¬h with ⊩-dec f x
+¬¬f⇔f : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f : Formula C) → (x : C ⋆ α) → ¬ ¬ f ⊩ x ⇔ f ⊩ x
+to (¬¬f⇔f f x) ¬¬h with ⊩-dec f x
 ... | no ¬h = ⊥-elim₀ (¬¬h ¬h)
 ... | yes h = h
-from (~~f⇔f _ _) h ¬h = ¬h h
+from (¬¬f⇔f _ _) h ¬h = ¬h h
 
-~|f₁∧f₂|⇔~f₁∨~f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f₁ f₂ : Formula C) → (x : C ⋆ α) → ~ (f₁ ∧ f₂) ⊩ x ⇔ ~ f₁ ∨ ~ f₂ ⊩ x
-to (~|f₁∧f₂|⇔~f₁∨~f₂ f₁ f₂ x) h with ⊩-dec f₁ x
+¬|f₁∧f₂|⇔¬f₁∨¬f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f₁ f₂ : Formula C) → (x : C ⋆ α) → ¬ (f₁ ∧ f₂) ⊩ x ⇔ ¬ f₁ ∨ ¬ f₂ ⊩ x
+to (¬|f₁∧f₂|⇔¬f₁∨¬f₂ f₁ f₂ x) h with ⊩-dec f₁ x
 ... | no ¬h₁ = inj₁ ¬h₁
 ... | yes h₁ with ⊩-dec f₂ x
 ...   | no ¬h₂ = inj₂ ¬h₂
 ...   | yes h₂ = ⊥-elim₀ (h (h₁ , h₂))
-from (~|f₁∧f₂|⇔~f₁∨~f₂ _ _ _) (inj₁ ¬h₁) (h₁ , _) = ⊥-elim₀ (¬h₁ h₁)
-from (~|f₁∧f₂|⇔~f₁∨~f₂ _ _ _) (inj₂ ¬h₂) (_ , h₂) = ⊥-elim₀ (¬h₂ h₂)
+from (¬|f₁∧f₂|⇔¬f₁∨¬f₂ _ _ _) (inj₁ ¬h₁) (h₁ , _) = ⊥-elim₀ (¬h₁ h₁)
+from (¬|f₁∧f₂|⇔¬f₁∨¬f₂ _ _ _) (inj₂ ¬h₂) (_ , h₂) = ⊥-elim₀ (¬h₂ h₂)
 
-~|f₁∨f₂|⇔~f₁∧~f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f₁ f₂ : Formula C) → (x : C ⋆ α) → ~ (f₁ ∨ f₂) ⊩ x ⇔ ~ f₁ ∧ ~ f₂ ⊩ x
-to (~|f₁∨f₂|⇔~f₁∧~f₂ _ _ _) h = (λ h₁ → h (inj₁ h₁)) , λ h₂ → h (inj₂ h₂)
-from (~|f₁∨f₂|⇔~f₁∧~f₂ _ _ _) (¬h₁ , _) (inj₁ h₁) = ¬h₁ h₁
-from (~|f₁∨f₂|⇔~f₁∧~f₂ _ _ _) (_ , ¬h₂) (inj₂ h₂) = ¬h₂ h₂
+¬|f₁∨f₂|⇔¬f₁∧¬f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f₁ f₂ : Formula C) → (x : C ⋆ α) → ¬ (f₁ ∨ f₂) ⊩ x ⇔ ¬ f₁ ∧ ¬ f₂ ⊩ x
+to (¬|f₁∨f₂|⇔¬f₁∧¬f₂ _ _ _) h = (λ h₁ → h (inj₁ h₁)) , λ h₂ → h (inj₂ h₂)
+from (¬|f₁∨f₂|⇔¬f₁∧¬f₂ _ _ _) (¬h₁ , _) (inj₁ h₁) = ¬h₁ h₁
+from (¬|f₁∨f₂|⇔¬f₁∧¬f₂ _ _ _) (_ , ¬h₂) (inj₂ h₂) = ¬h₂ h₂
 
 -- Theorems for _∧_
 
@@ -143,25 +143,25 @@ from (f∨false⇔f _ _) h = inj₁ h
 
 -- Theorems for _⇒_
 
-f₁⇒f₂⇔~f₁∨f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f₁ f₂ : Formula C) → (x : C ⋆ α) → f₁ ⇒ f₂ ⊩ x ⇔ ~ f₁ ∨ f₂ ⊩ x
-to (f₁⇒f₂⇔~f₁∨f₂ f₁ _ x) h with ⊩-dec f₁ x
+f₁⇒f₂⇔¬f₁∨f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (f₁ f₂ : Formula C) → (x : C ⋆ α) → f₁ ⇒ f₂ ⊩ x ⇔ ¬ f₁ ∨ f₂ ⊩ x
+to (f₁⇒f₂⇔¬f₁∨f₂ f₁ _ x) h with ⊩-dec f₁ x
 ... | no ¬h₁ = inj₁ ¬h₁
 ... | yes h₁ = inj₂ (h h₁)
-from (f₁⇒f₂⇔~f₁∨f₂ _ _ _) (inj₁ ¬h₁) h₁ = ⊥-elim₀ (¬h₁ h₁)
-from (f₁⇒f₂⇔~f₁∨f₂ _ _ _) (inj₂ h₂) _ = h₂
+from (f₁⇒f₂⇔¬f₁∨f₂ _ _ _) (inj₁ ¬h₁) h₁ = ⊥-elim₀ (¬h₁ h₁)
+from (f₁⇒f₂⇔¬f₁∨f₂ _ _ _) (inj₂ h₂) _ = h₂
 
 -- Hennessy-Milner Logic
 
 -- Theorems for ⟨_⟩_
 
-~|⟨s⟩f|⇔[s]~f : ⦃ eq : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f : Formula C) → (x : C ⋆ α) → ~ (⟨ s ⟩ f) ⊩ x ⇔ [ s ] ~ f ⊩ x
-to (~|⟨s⟩f|⇔[s]~f _ _ (pure _)) _ = tt
-to (~|⟨s⟩f|⇔[s]~f s₁ _ (impure (s₂ , _))) h¬∃ with s₁ ≟ s₂
+¬|⟨s⟩f|⇔[s]¬f : ⦃ eq : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f : Formula C) → (x : C ⋆ α) → ¬ (⟨ s ⟩ f) ⊩ x ⇔ [ s ] ¬ f ⊩ x
+to (¬|⟨s⟩f|⇔[s]¬f _ _ (pure _)) _ = tt
+to (¬|⟨s⟩f|⇔[s]¬f s₁ _ (impure (s₂ , _))) h¬∃ with s₁ ≟ s₂
 ... | no _ = tt
 ... | yes refl = λ p h → h¬∃ (p , h)
-from (~|⟨s⟩f|⇔[s]~f s₁ _ (impure (s₂ , _))) _ h∃ with s₁ ≟ s₂
+from (¬|⟨s⟩f|⇔[s]¬f s₁ _ (impure (s₂ , _))) _ h∃ with s₁ ≟ s₂
 ... | no _ = ⊥-elim h∃
-from (~|⟨s⟩f|⇔[s]~f s _ (impure (.s , _))) h¬∀ (p , h) | yes refl = (h¬∀ p) h
+from (¬|⟨s⟩f|⇔[s]¬f s _ (impure (.s , _))) h¬∀ (p , h) | yes refl = (h¬∀ p) h
 
 ⟨s⟩false⇔false : ⦃ eq : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (x : C ⋆ α) → ⟨ s ⟩ false ⊩ x ⇔ false ⊩ x
 to (⟨s⟩false⇔false s₁ (impure (s₂ , _))) h∃ with s₁ ≟ s₂
@@ -188,16 +188,16 @@ from (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s _ _ (impure (.s , _))
 
 -- Theorems for [_]_
 
-~|[s]f|⇔⟨s⟩~f : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f : Formula C) → (x : C ⋆ α) → ~ ([ s ] f) ⊩ x ⇔ ⟨ s ⟩ ~ f ⊩ x
-to (~|[s]f|⇔⟨s⟩~f _ _ (pure _)) h¬∀ = lift (h¬∀ tt)
-to (~|[s]f|⇔⟨s⟩~f s₁ f x@(impure (s₂ , c))) h¬∀ with ⊩-dec (⟨ s₁ ⟩ ~ f) x
+¬|[s]f|⇔⟨s⟩¬f : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f : Formula C) → (x : C ⋆ α) → ¬ ([ s ] f) ⊩ x ⇔ ⟨ s ⟩ ¬ f ⊩ x
+to (¬|[s]f|⇔⟨s⟩¬f _ _ (pure _)) h¬∀ = lift (h¬∀ tt)
+to (¬|[s]f|⇔⟨s⟩¬f s₁ f x@(impure (s₂ , c))) h¬∀ with ⊩-dec (⟨ s₁ ⟩ ¬ f) x
 ... | yes h∃ = h∃
 ... | no h¬∃ with s₁ ≟ s₂
 ...   | no _ = lift (h¬∀ tt)
 ...   | yes refl = ⊥-elim₀ (h¬∀ λ p → case ⊩-dec f (c p) of λ { (yes h) → h ; (no ¬h) → ⊥-elim₀ (h¬∃ (p , ¬h)) })
-from (~|[s]f|⇔⟨s⟩~f s₁ _ (impure (s₂ , _))) h∃ _ with s₁ ≟ s₂
+from (¬|[s]f|⇔⟨s⟩¬f s₁ _ (impure (s₂ , _))) h∃ _ with s₁ ≟ s₂
 ... | no _ = ⊥-elim h∃
-from (~|[s]f|⇔⟨s⟩~f s _ (impure (.s , _))) (p , ¬h) h∀ | yes refl = ¬h (h∀ p)
+from (¬|[s]f|⇔⟨s⟩¬f s _ (impure (.s , _))) (p , ¬h) h∀ | yes refl = ¬h (h∀ p)
 
 [s]true⇔true : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (x : C ⋆ α) → [ s ] true ⊩ x ⇔ true ⊩ x
 to ([s]true⇔true _ _) _ = tt

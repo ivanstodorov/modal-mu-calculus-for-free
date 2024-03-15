@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.FixedPoints.Base where
 
-open import Common.ActionFormulas using (ActionFormula; parseActF)
+open import Common.RegularFormulas using (ActionFormula; _⊩ᵃᶠ_)
 open import Common.FixedPoints using (Maybe'; Result; IndexedContainer; FixedPoint; WI; MI; _▷_)
 open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Bool using (Bool; not)
@@ -40,7 +40,7 @@ open Vec
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-infix 40 ~_
+infix 40 ¬_
 infix 40 var
 infixr 35 _∧_
 infixr 35 _∨_
@@ -52,7 +52,7 @@ infix 30 ν_．_
 
 data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C
-  ~_ : Formula C → Formula C
+  ¬_ : Formula C → Formula C
   _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
   ⟨_⟩_ [_]_ : ActionFormula C → Formula C → Formula C
   μ_．_ ν_．_ : String → Formula C → Formula C
@@ -63,7 +63,7 @@ infix 25 _⊩_
 _⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 f ⊩ x = case f→f' f [] of λ { (just f') → case f''→fᵈⁿᶠ (f'→f'' f') of λ { (just d) → d ⊩ᵈ x ; nothing → ⊥ } ; nothing → ⊥ }
   where
-  infix 40 ~_
+  infix 40 ¬_
   infix 40 var
   infixr 35 _∧_
   infixr 35 _∨_
@@ -75,7 +75,7 @@ f ⊩ x = case f→f' f [] of λ { (just f') → case f''→fᵈⁿᶠ (f'→f''
 
   data Formula' (C : Container ℓ₁ ℓ₂) : ℕ → Set ℓ₁ where
     true false : ∀ {n} → Formula' C n
-    ~_ : ∀ {n} → Formula' C n → Formula' C n
+    ¬_ : ∀ {n} → Formula' C n → Formula' C n
     _∧_ _∨_ _⇒_ : ∀ {n} → Formula' C n → Formula' C n → Formula' C n
     ⟨_⟩_ [_]_ : ∀ {n} → ActionFormula C → Formula' C n → Formula' C n
     μ_ ν_ : ∀ {n} → Formula' C (suc n) → Formula' C n
@@ -84,8 +84,8 @@ f ⊩ x = case f→f' f [] of λ { (just f') → case f''→fᵈⁿᶠ (f'→f''
   f→f' : {C : Container ℓ₁ ℓ₂} → Formula C → (xs : List String) → Maybe (Formula' C (length xs))
   f→f' true xs = just true
   f→f' false xs = just false
-  f→f' (~ f) xs with f→f' f xs
-  ... | just f' = just (~ f')
+  f→f' (¬ f) xs with f→f' f xs
+  ... | just f' = just (¬ f')
   ... | nothing = nothing
   f→f' (f₁ ∧ f₂) xs with f→f' f₁ xs | f→f' f₂ xs
   ... | just f'₁ | just f'₂ = just (f'₁ ∧ f'₂)
@@ -146,7 +146,7 @@ f ⊩ x = case f→f' f [] of λ { (just f') → case f''→fᵈⁿᶠ (f'→f''
   f'→f'' : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → Formula' C n → Formula'' C n
   f'→f'' true = true
   f'→f'' false = false
-  f'→f'' (~ f') = negate (f'→f'' f')
+  f'→f'' (¬ f') = negate (f'→f'' f')
   f'→f'' (f'₁ ∧ f'₂) = f'→f'' f'₁ ∧ f'→f'' f'₂
   f'→f'' (f'₁ ∨ f'₂) = f'→f'' f'₁ ∨ f'→f'' f'₂
   f'→f'' (f'₁ ⇒ f'₂) = negate (f'→f'' f'₁) ∨ f'→f'' f'₂
@@ -254,11 +254,11 @@ f ⊩ x = case f→f' f [] of λ { (just f') → case f''→fᵈⁿᶠ (f'→f''
 
   unfold : {C : Container ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence C → C ⋆ α → (Maybe' (C ⋆ α) → Result C α n) → Result C α n
   unfold (⟨ _ ⟩ _) (pure _) f = f fail
-  unfold (⟨ af ⟩ m) (impure (s , c)) f with parseActF af s
+  unfold (⟨ af ⟩ m) (impure (s , c)) f with af ⊩ᵃᶠ s
   ... | false = f fail
   ... | true = exists s λ p → unfold m (c p) f
   unfold ([ _ ] _) (pure _) f = f done
-  unfold ([ af ] m) (impure (s , c)) f with parseActF af s
+  unfold ([ af ] m) (impure (s , c)) f with af ⊩ᵃᶠ s
   ... | false = f done
   ... | true = all s λ p → unfold m (c p) f
   unfold ε x f = f (val x)
@@ -321,11 +321,11 @@ f ⊩ x = case f→f' f [] of λ { (just f') → case f''→fᵈⁿᶠ (f'→f''
   true ⊩ᵛ _ = ⊤
   false ⊩ᵛ _ = ⊥
   ⟨ _ ⟩ _ ⊩ᵛ pure _ = ⊥
-  ⟨ af ⟩ v ⊩ᵛ impure (s , c) with parseActF af s
+  ⟨ af ⟩ v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
   ... | false = ⊥
   ... | true = ∃[ p ] v ⊩ᵛ c p
   [ _ ] _ ⊩ᵛ pure _ = ⊤
-  [ af ] v ⊩ᵛ impure (s , c) with parseActF af s
+  [ af ] v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
   ... | false = ⊤
   ... | true = ∀ p → v ⊩ᵛ c p
   _⊩ᵛ_ {α = α} (μ d) x = WI (proj₂ (containerize leastFP d zero [] α)) (val (x , zero))

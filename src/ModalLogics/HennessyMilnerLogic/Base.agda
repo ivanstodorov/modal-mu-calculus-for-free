@@ -12,7 +12,7 @@ open import Data.Unit.Polymorphic using (⊤)
 open import Level using (Level)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using (¬_; yes; no)
+open import Relation.Nullary using (yes; no) renaming (¬_ to ¬'_)
 
 open _⋆_
 open IsDecEquivalence ⦃...⦄
@@ -20,7 +20,7 @@ open IsDecEquivalence ⦃...⦄
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-infix 40 ~_
+infix 40 ¬_
 infixr 35 _∧_
 infixr 35 _∨_
 infixr 35 _⇒_
@@ -29,7 +29,7 @@ infix 30 [_]_
 
 data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C
-  ~_ : Formula C → Formula C
+  ¬_ : Formula C → Formula C
   _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
   ⟨_⟩_ [_]_ : Shape C → Formula C → Formula C
 
@@ -38,7 +38,7 @@ infix 25 _⊩_
 _⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set ℓ₂
 true ⊩ _ = ⊤
 false ⊩ _ = ⊥
-~ f ⊩ x = ¬ f ⊩ x
+¬ f ⊩ x = ¬' f ⊩ x
 f₁ ∧ f₂ ⊩ x = f₁ ⊩ x × f₂ ⊩ x
 f₁ ∨ f₂ ⊩ x = f₁ ⊩ x ⊎ f₂ ⊩ x
 f₁ ⇒ f₂ ⊩ x = f₁ ⊩ x → f₂ ⊩ x

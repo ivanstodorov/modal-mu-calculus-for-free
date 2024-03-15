@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe #-}
 module ModalLogics.ActionFormulas.Base where
 
-open import Common.ActionFormulas using (ActionFormula; parseActF)
+open import Common.RegularFormulas using (ActionFormula; _⊩ᵃᶠ_)
 open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Bool using (true; false)
 open import Data.Container using (Container; Shape)
@@ -14,7 +14,7 @@ open import Data.Unit.Polymorphic using (⊤)
 open import Level using (Level)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using (¬_)
+open import Relation.Nullary using () renaming (¬_ to ¬'_)
 
 open _⋆_
 open IsDecEquivalence ⦃...⦄
@@ -22,7 +22,7 @@ open IsDecEquivalence ⦃...⦄
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-infix 40 ~_
+infix 40 ¬_
 infixr 35 _∧_
 infixr 35 _∨_
 infixr 35 _⇒_
@@ -31,7 +31,7 @@ infix 30 [_]_
 
 data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C
-  ~_ : Formula C → Formula C
+  ¬_ : Formula C → Formula C
   _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
   ⟨_⟩_ [_]_ : ActionFormula C → Formula C → Formula C
 
@@ -40,16 +40,16 @@ infix 25 _⊩_
 _⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set ℓ₂
 true ⊩ _ = ⊤
 false ⊩ _ = ⊥
-~ f ⊩ x = ¬ f ⊩ x
+¬ f ⊩ x = ¬' f ⊩ x
 f₁ ∧ f₂ ⊩ x = f₁ ⊩ x × f₂ ⊩ x
 f₁ ∨ f₂ ⊩ x = f₁ ⊩ x ⊎ f₂ ⊩ x
 f₁ ⇒ f₂ ⊩ x = f₁ ⊩ x → f₂ ⊩ x
 ⟨ _ ⟩ _ ⊩ pure _ = ⊥
-⟨ af ⟩ f ⊩ impure (s , c) with parseActF af s
+⟨ af ⟩ f ⊩ impure (s , c) with af ⊩ᵃᶠ s
 ... | false = ⊥
 ... | true = ∃[ p ] f ⊩ c p
 [ _ ] _ ⊩ pure _ = ⊤
-[ af ] f ⊩ impure (s , c) with parseActF af s
+[ af ] f ⊩ impure (s , c) with af ⊩ᵃᶠ s
 ... | false = ⊤
 ... | true = ∀ p → f ⊩ c p
 
