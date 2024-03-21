@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --overlapping-instances #-}
+{-# OPTIONS --without-K --safe --overlapping-instances #-}
 module ModalLogics.HennessyMilnerLogic.Examples.Fusc where
 
 open import Common.Container using (_:<:_)
