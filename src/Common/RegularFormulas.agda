@@ -14,14 +14,14 @@ open IsDecEquivalence ⦃...⦄
 private variable
   ℓ₁ ℓ₂ : Level
 
-infix 60 act
+infix 65 act_
 infix 60 ¬_
 infixr 55 _∪_
 infixr 55 _∩_
 
 data ActionFormula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : ActionFormula C
-  act : Shape C → ActionFormula C
+  act_ : Shape C → ActionFormula C
   ¬_ : ActionFormula C → ActionFormula C
   _∪_ _∩_ : ActionFormula C → ActionFormula C → ActionFormula C
 
@@ -35,7 +35,7 @@ act s₁ ⊩ᵃᶠ s₂ = ⌊ s₁ ≟ s₂ ⌋
 af₁ ∪ af₂ ⊩ᵃᶠ s = af₁ ⊩ᵃᶠ s ∨ af₂ ⊩ᵃᶠ s
 af₁ ∩ af₂ ⊩ᵃᶠ s = af₁ ⊩ᵃᶠ s ∧ af₂ ⊩ᵃᶠ s
 
-infix 55 actF
+infix 55 actF_
 infix 50 _*
 infix 50 _⁺
 infixr 45 _·_
@@ -43,13 +43,13 @@ infixr 45 _+_
 
 data RegularFormula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   ε : RegularFormula C
-  actF : ActionFormula C → RegularFormula C
+  actF_ : ActionFormula C → RegularFormula C
   _·_ _+_ : RegularFormula C → RegularFormula C → RegularFormula C
   _* _⁺ : RegularFormula C → RegularFormula C
 
 data RegularFormula⁺ (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   ε : RegularFormula⁺ C
-  actF : ActionFormula C → RegularFormula⁺ C
+  actF_ : ActionFormula C → RegularFormula⁺ C
   _·_ _+_ : RegularFormula⁺ C → RegularFormula⁺ C → RegularFormula⁺ C
   _* : RegularFormula⁺ C → RegularFormula⁺ C
 
@@ -62,4 +62,3 @@ rf→rf⁺ (rf *) = rf→rf⁺ rf *
 rf→rf⁺ (rf ⁺) = rf⁺ · (rf⁺ *)
   where
   rf⁺ = rf→rf⁺ rf
- 
