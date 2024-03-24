@@ -9,8 +9,8 @@ open import Data.Container.FreeMonad using (_⋆_)
 open import Data.Empty.Polymorphic using (⊥)
 open import Data.Fin using (Fin; _≟_; toℕ)
 open import Data.List using (List; length; findIndexᵇ) renaming (lookup to lookup')
-open import Data.List.NonEmpty using (List⁺; _∷⁺_; foldr; toList) renaming ([_] to [_]⁺; length to length⁺)
-open import Data.Maybe using (Maybe; maybe)
+open import Data.List.NonEmpty using (List⁺; [_]; _∷⁺_; foldr; toList) renaming (length to length⁺)
+open import Data.Maybe using (just; nothing)
 open import Data.Nat using (ℕ; _∸_)
 open import Data.Product using (_×_; _,_; ∃-syntax)
 open import Data.String using (String; _==_)
@@ -26,7 +26,6 @@ open Containerˢᵗᵈ renaming (Shape to Shapeˢᵗᵈ; Position to Positionˢ�
 open _⋆_
 open Fin
 open List
-open Maybe
 open ℕ
 open _≡_
 
@@ -126,11 +125,11 @@ containerize-var (νᵈⁿᶠ d) prev = ε , val inj₂ (greatestFP , d , (great
 containerize-var (refᵈⁿᶠ i) prev = ε , val inj₁ (i , prev)
 
 containerize-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → Formulaᵈⁿᶠ-con C (suc n) → Previous C (suc n) → List⁺ (ModalitySequence C × Maybe' (Fin (suc n) × Previous C (suc n) ⊎ FixedPoint × Formulaᵈⁿᶠ-dis C (suc (suc n)) × Previous C (suc (suc n))))
-containerize-con (con-var v) prev = [ containerize-var v prev ]⁺
+containerize-con (con-var v) prev = [ containerize-var v prev ]
 containerize-con (v ∧ᵈⁿᶠ c) prev = containerize-var v prev ∷⁺ containerize-con c prev
 
 containerize-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → Formulaᵈⁿᶠ-dis C (suc n) → Previous C (suc n) → List⁺ (List⁺ (ModalitySequence C × Maybe' (Fin (suc n) × Previous C (suc n) ⊎ FixedPoint × Formulaᵈⁿᶠ-dis C (suc (suc n)) × Previous C (suc (suc n)))))
-containerize-dis (dis-con c) prev = [ containerize-con c prev ]⁺
+containerize-dis (dis-con c) prev = [ containerize-con c prev ]
 containerize-dis (c ∨ᵈⁿᶠ d) prev = containerize-con c prev ∷⁺ containerize-dis d prev
 
 containerize : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → Formulaᵈⁿᶠ-dis C (suc n) → Previous C (suc n) → (α : Set ℓ₃) → Container C α (suc n)
@@ -139,7 +138,7 @@ containerize {C = C} {n = n} d prev α with containerize-dis d prev
   where
   container : Container C α (suc n)
   Shape container = length⁺ xs
-  Position container s i = foldr (λ (m , x) acc → position m i x ∷⁺ acc) (λ (m , x) → [ position m i x ]⁺) (lookup' (toList xs) s)
+  Position container s i = foldr (λ (m , x) acc → position m i x ∷⁺ acc) (λ (m , x) → [ position m i x ]) (lookup' (toList xs) s)
     where
     position : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence C → C ⋆ α → Maybe' (Fin n × Previous C n ⊎ FixedPoint × Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Result C α n
     position m i (val x) = apply m i λ { (val o) → res (val (o , x)) ; done → res done ; fail → res fail }
@@ -225,7 +224,7 @@ data Formulaⁱ (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁ where
 infix 25 _⊩ⁱ_
 
 _⊩ⁱ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaⁱ C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-fⁱ ⊩ⁱ x = maybe (λ d → d ⊩ᵈ x) ⊥ (f'→fᵈⁿᶠ (fⁱ→f' fⁱ))
+fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
   where
   infix 45 ref'〔_〕_
   infixr 35 _∧'_
@@ -295,17 +294,12 @@ fⁱ ⊩ⁱ x = maybe (λ d → d ⊩ᵈ x) ⊥ (f'→fᵈⁿᶠ (fⁱ→f' fⁱ
   merge-dis-dis-and (dis-con c) d = merge-con-dis c d
   merge-dis-dis-and (c ∨ᵈⁿᶠ d₁) d₂ = merge-dis-dis-or (merge-con-dis c d₂) (merge-dis-dis-and d₁ d₂)
 
-  f'→fᵈⁿᶠ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formula' C n → Maybe (Formulaᵈⁿᶠ-dis C n)
-  f'→fᵈⁿᶠ true' = just (dis-con (con-var trueᵈⁿᶠ))
-  f'→fᵈⁿᶠ false' = just (dis-con (con-var falseᵈⁿᶠ))
-  f'→fᵈⁿᶠ (f'₁ ∧' f'₂) with f'→fᵈⁿᶠ f'₁ | f'→fᵈⁿᶠ f'₂
-  ... | just d₁ | just d₂ = just (merge-dis-dis-and d₁ d₂)
-  ... | _ | _ = nothing
-  f'→fᵈⁿᶠ (f'₁ ∨' f'₂) with f'→fᵈⁿᶠ f'₁ | f'→fᵈⁿᶠ f'₂
-  ... | just d₁ | just d₂ = just (merge-dis-dis-or d₁ d₂)
-  ... | _ | _ = nothing
-  f'→fᵈⁿᶠ (⟨ af ⟩' f') with f'→fᵈⁿᶠ f'
-  ... | just d = just (merge-∃-dis af d)
+  f'→fᵈⁿᶠ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formula' C n → Formulaᵈⁿᶠ-dis C n
+  f'→fᵈⁿᶠ true' = dis-con (con-var trueᵈⁿᶠ)
+  f'→fᵈⁿᶠ false' = dis-con (con-var falseᵈⁿᶠ)
+  f'→fᵈⁿᶠ (f'₁ ∧' f'₂) = merge-dis-dis-and (f'→fᵈⁿᶠ f'₁) (f'→fᵈⁿᶠ f'₂)
+  f'→fᵈⁿᶠ (f'₁ ∨' f'₂) = merge-dis-dis-or (f'→fᵈⁿᶠ f'₁) (f'→fᵈⁿᶠ f'₂)
+  f'→fᵈⁿᶠ (⟨ af ⟩' f') = merge-∃-dis af (f'→fᵈⁿᶠ f')
     where
     merge-∃-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-var C n
     merge-∃-var af v = ⟨ af ⟩ᵈⁿᶠ v
@@ -317,9 +311,7 @@ fⁱ ⊩ⁱ x = maybe (λ d → d ⊩ᵈ x) ⊥ (f'→fᵈⁿᶠ (fⁱ→f' fⁱ
     merge-∃-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
     merge-∃-dis af (dis-con c) = dis-con (merge-∃-con af c)
     merge-∃-dis af (c ∨ᵈⁿᶠ d) = merge-∃-con af c ∨ᵈⁿᶠ merge-∃-dis af d
-  ... | _ = nothing
-  f'→fᵈⁿᶠ ([ af ]' f') with f'→fᵈⁿᶠ f'
-  ... | just d = just (merge-∀-dis af d)
+  f'→fᵈⁿᶠ ([ af ]' f') = merge-∀-dis af (f'→fᵈⁿᶠ f')
     where
     merge-∀-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-var C n
     merge-∀-var af v = [ af ]ᵈⁿᶠ v
@@ -331,15 +323,10 @@ fⁱ ⊩ⁱ x = maybe (λ d → d ⊩ᵈ x) ⊥ (f'→fᵈⁿᶠ (fⁱ→f' fⁱ
     merge-∀-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
     merge-∀-dis af (dis-con c) = dis-con (merge-∀-con af c)
     merge-∀-dis af (c ∨ᵈⁿᶠ d) = merge-∀-con af c ∨ᵈⁿᶠ merge-∀-dis af d
-  ... | _ = nothing
-  f'→fᵈⁿᶠ (μ' f') with f'→fᵈⁿᶠ f'
-  ... | just d = just (dis-con (con-var (μᵈⁿᶠ d)))
-  ... | _ = nothing
-  f'→fᵈⁿᶠ (ν' f') with f'→fᵈⁿᶠ f'
-  ... | just d = just (dis-con (con-var (νᵈⁿᶠ d)))
-  ... | _ = nothing
-  f'→fᵈⁿᶠ (ref'〔 false 〕 _) = nothing
-  f'→fᵈⁿᶠ (ref'〔 true 〕 i) = just (dis-con (con-var (refᵈⁿᶠ i)))
+  f'→fᵈⁿᶠ (μ' f') = dis-con (con-var (μᵈⁿᶠ f'→fᵈⁿᶠ f'))
+  f'→fᵈⁿᶠ (ν' f') = dis-con (con-var (νᵈⁿᶠ f'→fᵈⁿᶠ f'))
+  f'→fᵈⁿᶠ (ref'〔 false 〕 _) = dis-con con-var falseᵈⁿᶠ
+  f'→fᵈⁿᶠ (ref'〔 true 〕 i) = dis-con (con-var (refᵈⁿᶠ i))
 
 infix 45 ref_
 infix 40 ¬_
@@ -362,38 +349,22 @@ data Formula (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : Set ℓ₁ where
 infix 25 _⊩_
 
 _⊩_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-f ⊩ x = maybe (λ fⁱ → fⁱ ⊩ⁱ x) ⊥ (f→fⁱ f [])
+f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   where
-  f→fⁱ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → Formula C → (xs : List String) → Maybe (Formulaⁱ C (length xs))
-  f→fⁱ true xs = just trueⁱ
-  f→fⁱ false xs = just falseⁱ
-  f→fⁱ (¬ f) xs with f→fⁱ f xs
-  ... | just f' = just (¬ⁱ f')
-  ... | nothing = nothing
-  f→fⁱ (f₁ ∧ f₂) xs with f→fⁱ f₁ xs | f→fⁱ f₂ xs
-  ... | just f'₁ | just f'₂ = just (f'₁ ∧ⁱ f'₂)
-  ... | _ | _ = nothing
-  f→fⁱ (f₁ ∨ f₂) xs with f→fⁱ f₁ xs | f→fⁱ f₂ xs
-  ... | just f'₁ | just f'₂ = just (f'₁ ∨ⁱ f'₂)
-  ... | _ | _ = nothing
-  f→fⁱ (f₁ ⇒ f₂) xs with f→fⁱ f₁ xs | f→fⁱ f₂ xs
-  ... | just f'₁ | just f'₂ = just (f'₁ ⇒ⁱ f'₂)
-  ... | _ | _ = nothing
-  f→fⁱ (⟨ af ⟩ f) xs with f→fⁱ f xs
-  ... | just f' = just (⟨ af ⟩ⁱ f')
-  ... | nothing = nothing
-  f→fⁱ ([ af ] f) xs with f→fⁱ f xs
-  ... | just f' = just ([ af ]ⁱ f')
-  ... | nothing = nothing
-  f→fⁱ (μ x ． f) xs with f→fⁱ f (x ∷ xs)
-  ... | just f' = just (μⁱ f')
-  ... | nothing = nothing
-  f→fⁱ (ν x ． f) xs with f→fⁱ f (x ∷ xs)
-  ... | just f' = just (νⁱ f')
-  ... | nothing = nothing
+  f→fⁱ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → Formula C → (xs : List String) → Formulaⁱ C (length xs)
+  f→fⁱ true xs = trueⁱ
+  f→fⁱ false xs = falseⁱ
+  f→fⁱ (¬ f) xs = ¬ⁱ f→fⁱ f xs
+  f→fⁱ (f₁ ∧ f₂) xs = f→fⁱ f₁ xs ∧ⁱ f→fⁱ f₂ xs
+  f→fⁱ (f₁ ∨ f₂) xs = f→fⁱ f₁ xs ∨ⁱ f→fⁱ f₂ xs
+  f→fⁱ (f₁ ⇒ f₂) xs = f→fⁱ f₁ xs ⇒ⁱ f→fⁱ f₂ xs
+  f→fⁱ (⟨ af ⟩ f) xs = ⟨ af ⟩ⁱ f→fⁱ f xs
+  f→fⁱ ([ af ] f) xs = [ af ]ⁱ f→fⁱ f xs
+  f→fⁱ (μ x ． f) xs = μⁱ f→fⁱ f (x ∷ xs)
+  f→fⁱ (ν x ． f) xs = νⁱ f→fⁱ f (x ∷ xs)
   f→fⁱ (ref x) xs with findIndexᵇ (_==_ x) xs
-  ... | just i = just (refⁱ i)
-  ... | nothing = nothing
+  ... | just i = refⁱ i
+  ... | nothing = falseⁱ
 
 infix 25 _⊩_!_
 
