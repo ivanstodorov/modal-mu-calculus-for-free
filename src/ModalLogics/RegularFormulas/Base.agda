@@ -53,67 +53,67 @@ f ⊩ x = maybe (λ fⁱ → fⁱ ⊩ⁱ x) ⊥ (f→fⁱ f [])
   ref⁺ fⁱ = ref⁺' fⁱ zero
     where
     ref⁺' : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → Formulaⁱ C n → Fin (suc n) → Formulaⁱ C (suc n)
-    ref⁺' true _ = true
-    ref⁺' false _ = false
-    ref⁺' (¬ fⁱ) x = ¬ ref⁺' fⁱ x
-    ref⁺' (fⁱ₁ ∧ fⁱ₂) x = ref⁺' fⁱ₁ x ∧ ref⁺' fⁱ₂ x
-    ref⁺' (fⁱ₁ ∨ fⁱ₂) x = ref⁺' fⁱ₁ x ∨ ref⁺' fⁱ₂ x
-    ref⁺' (fⁱ₁ ⇒ fⁱ₂) x = ref⁺' fⁱ₁ x ⇒ ref⁺' fⁱ₂ x
-    ref⁺' (⟨ af ⟩ fⁱ) x = ⟨ af ⟩ ref⁺' fⁱ x
-    ref⁺' ([ af ] fⁱ) x = [ af ] ref⁺' fⁱ x
-    ref⁺' (μ fⁱ) x = μ ref⁺' fⁱ (suc x)
-    ref⁺' (ν fⁱ) x = ν ref⁺' fⁱ (suc x)
-    ref⁺' (ref i) x with toℕ i <ᵇ toℕ x
-    ... | false = ref inject₁⁺ i
+    ref⁺' trueⁱ _ = trueⁱ
+    ref⁺' falseⁱ _ = falseⁱ
+    ref⁺' (¬ⁱ fⁱ) x = ¬ⁱ ref⁺' fⁱ x
+    ref⁺' (fⁱ₁ ∧ⁱ fⁱ₂) x = ref⁺' fⁱ₁ x ∧ⁱ ref⁺' fⁱ₂ x
+    ref⁺' (fⁱ₁ ∨ⁱ fⁱ₂) x = ref⁺' fⁱ₁ x ∨ⁱ ref⁺' fⁱ₂ x
+    ref⁺' (fⁱ₁ ⇒ⁱ fⁱ₂) x = ref⁺' fⁱ₁ x ⇒ⁱ ref⁺' fⁱ₂ x
+    ref⁺' (⟨ af ⟩ⁱ fⁱ) x = ⟨ af ⟩ⁱ ref⁺' fⁱ x
+    ref⁺' ([ af ]ⁱ fⁱ) x = [ af ]ⁱ ref⁺' fⁱ x
+    ref⁺' (μⁱ fⁱ) x = μⁱ ref⁺' fⁱ (suc x)
+    ref⁺' (νⁱ fⁱ) x = νⁱ ref⁺' fⁱ (suc x)
+    ref⁺' (refⁱ i) x with toℕ i <ᵇ toℕ x
+    ... | false = refⁱ inject₁⁺ i
       where
       inject₁⁺ : {n : ℕ} → Fin n → Fin (suc n)
       inject₁⁺ zero = suc zero
       inject₁⁺ (suc n) = suc (inject₁⁺ n)
-    ... | true = ref inject₁ i
+    ... | true = refⁱ inject₁ i
 
   f→fⁱ : {C : Container ℓ₁ ℓ₂} → Formula C → (xs : List String) → Maybe (Formulaⁱ C (length xs))
-  f→fⁱ true _ = just true
-  f→fⁱ false _ = just false
+  f→fⁱ true _ = just trueⁱ
+  f→fⁱ false _ = just falseⁱ
   f→fⁱ (¬ f) xs with f→fⁱ f xs
-  ... | just fⁱ = just (¬ fⁱ)
+  ... | just fⁱ = just (¬ⁱ fⁱ)
   ... | nothing = nothing
   f→fⁱ (f₁ ∧ f₂) xs with f→fⁱ f₁ xs | f→fⁱ f₂ xs
-  ... | just fⁱ₁ | just fⁱ₂ = just (fⁱ₁ ∧ fⁱ₂)
+  ... | just fⁱ₁ | just fⁱ₂ = just (fⁱ₁ ∧ⁱ fⁱ₂)
   ... | _ | _ = nothing
   f→fⁱ (f₁ ∨ f₂) xs with f→fⁱ f₁ xs | f→fⁱ f₂ xs
-  ... | just fⁱ₁ | just fⁱ₂ = just (fⁱ₁ ∨ fⁱ₂)
+  ... | just fⁱ₁ | just fⁱ₂ = just (fⁱ₁ ∨ⁱ fⁱ₂)
   ... | _ | _ = nothing
   f→fⁱ (f₁ ⇒ f₂) xs with f→fⁱ f₁ xs | f→fⁱ f₂ xs
-  ... | just fⁱ₁ | just fⁱ₂ = just (fⁱ₁ ⇒ fⁱ₂)
+  ... | just fⁱ₁ | just fⁱ₂ = just (fⁱ₁ ⇒ⁱ fⁱ₂)
   ... | _ | _ = nothing
   f→fⁱ (⟨ rf ⟩ f) xs with f→fⁱ f xs
   ... | just fⁱ = just (helper-∃ (rf→rf⁺ rf) fⁱ)
     where
     helper-∃ : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → RegularFormula⁺ C → Formulaⁱ C n → Formulaⁱ C n
     helper-∃ ε fⁱ = fⁱ
-    helper-∃ (actF af) fⁱ = ⟨ af ⟩ fⁱ
+    helper-∃ (actF af) fⁱ = ⟨ af ⟩ⁱ fⁱ
     helper-∃ (rf⁺₁ · rf⁺₂) fⁱ = helper-∃ rf⁺₁ (helper-∃ rf⁺₂ fⁱ)
-    helper-∃ (rf⁺₁ + rf⁺₂) fⁱ = helper-∃ rf⁺₁ fⁱ ∨ helper-∃ rf⁺₂ fⁱ
-    helper-∃ (rf⁺ *) fⁱ = μ helper-∃ rf⁺ (ref zero) ∨ ref⁺ fⁱ
+    helper-∃ (rf⁺₁ + rf⁺₂) fⁱ = helper-∃ rf⁺₁ fⁱ ∨ⁱ helper-∃ rf⁺₂ fⁱ
+    helper-∃ (rf⁺ *) fⁱ = μⁱ helper-∃ rf⁺ (refⁱ zero) ∨ⁱ ref⁺ fⁱ
   ... | nothing = nothing
   f→fⁱ ([ rf ] f) xs with f→fⁱ f xs
   ... | just fⁱ = just (helper-∀ (rf→rf⁺ rf) fⁱ)
     where
     helper-∀ : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → RegularFormula⁺ C → Formulaⁱ C n → Formulaⁱ C n
     helper-∀ ε fⁱ = fⁱ
-    helper-∀ (actF af) fⁱ = [ af ] fⁱ
+    helper-∀ (actF af) fⁱ = [ af ]ⁱ fⁱ
     helper-∀ (rf⁺₁ · rf⁺₂) fⁱ = helper-∀ rf⁺₁ (helper-∀ rf⁺₂ fⁱ)
-    helper-∀ (rf⁺₁ + rf⁺₂) fⁱ = helper-∀ rf⁺₁ fⁱ ∨ helper-∀ rf⁺₂ fⁱ
-    helper-∀ (rf⁺ *) fⁱ = ν helper-∀ rf⁺ (ref zero) ∧ ref⁺ fⁱ
+    helper-∀ (rf⁺₁ + rf⁺₂) fⁱ = helper-∀ rf⁺₁ fⁱ ∨ⁱ helper-∀ rf⁺₂ fⁱ
+    helper-∀ (rf⁺ *) fⁱ = νⁱ helper-∀ rf⁺ (refⁱ zero) ∧ⁱ ref⁺ fⁱ
   ... | nothing = nothing
   f→fⁱ (μ x ． f) xs with f→fⁱ f (x ∷ xs)
-  ... | just fⁱ = just (μ fⁱ)
+  ... | just fⁱ = just (μⁱ fⁱ)
   ... | nothing = nothing
   f→fⁱ (ν x ． f) xs with f→fⁱ f (x ∷ xs)
-  ... | just fⁱ = just (ν fⁱ)
+  ... | just fⁱ = just (νⁱ fⁱ)
   ... | nothing = nothing
   f→fⁱ (ref x) xs with findIndexᵇ (_==_ x) xs
-  ... | just i = just (ref i)
+  ... | just i = just (refⁱ i)
   ... | nothing = nothing
 
 infix 25 _⊩_!_

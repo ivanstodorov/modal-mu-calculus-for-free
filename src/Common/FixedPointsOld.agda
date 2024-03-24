@@ -1,5 +1,5 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
-module Common.FixedPoints where
+module Common.FixedPointsOld where
 
 open import Data.Container using () renaming (Container to Containerˢᵗᵈ)
 open import Data.Container.FreeMonad using (_⋆_)
