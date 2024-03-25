@@ -87,13 +87,13 @@ data Maybe' (α : Set ℓ) : Set ℓ where
 
 data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
   res_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Result C α
-  ∃〔_〕_ : (s : Shapeˢᵗᵈ C) → (Positionˢᵗᵈ C s → Result C α) → Result C α
-  ∀〔_〕_ : (s : Shapeˢᵗᵈ C) → (Positionˢᵗᵈ C s → Result C α) → Result C α
+  ∃ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α) → Result C α
+  ∀ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α) → Result C α
 
 unfold-r : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Result C α → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold-r (res v) o x = o ≡ v → x
-unfold-r (∃〔 _ 〕 c) o x = ∃[ p ] unfold-r (c p) o x
-unfold-r (∀〔 _ 〕 c) o x = ∀ p → unfold-r (c p) o x
+unfold-r (∃ʳ c) o x = ∃[ p ] unfold-r (c p) o x
+unfold-r (∀ʳ c) o x = ∀ p → unfold-r (c p) o x
 
 _<_ : {α : Set ℓ} → Rel (List⁺ α) 0ℓ
 xs < ys = length⁺ xs <′ length⁺ ys
@@ -124,11 +124,11 @@ apply : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = 
 apply (⟪ _ ⟫ _) (pure _) f = f fail
 apply (⟪ af ⟫ m) (impure (s , c)) f with af ⊩ᵃᶠ s
 ... | false = f fail
-... | true = ∃〔 s 〕 λ p → apply m (c p) f
+... | true = ∃ʳ λ p → apply m (c p) f
 apply (⟦ _ ⟧ _) (pure _) f = f done
 apply (⟦ af ⟧ m) (impure (s , c)) f with af ⊩ᵃᶠ s
 ... | false = f done
-... | true = ∀〔 s 〕 λ p → apply m (c p) f
+... | true = ∀ʳ λ p → apply m (c p) f
 apply ε x f = f (val x)
 
 n∸fin[n]≡suc : (n : ℕ) → (i : Fin n) → ∃[ x ] n ∸ toℕ i ≡ suc x
