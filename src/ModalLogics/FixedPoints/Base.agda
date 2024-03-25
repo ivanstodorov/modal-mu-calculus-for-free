@@ -9,14 +9,17 @@ open import Data.Container.FreeMonad using (_⋆_)
 open import Data.Empty.Polymorphic using (⊥)
 open import Data.Fin using (Fin; _≟_; toℕ)
 open import Data.List using (List; length; findIndexᵇ) renaming (lookup to lookup')
-open import Data.List.NonEmpty using (List⁺; [_]; _∷⁺_; foldr; toList) renaming (length to length⁺)
+open import Data.List.NonEmpty using (List⁺; [_]; _∷_; _∷⁺_; foldr; toList) renaming (length to length⁺)
 open import Data.Maybe using (just; nothing)
-open import Data.Nat using (ℕ; _∸_)
+open import Data.Nat using (ℕ; _∸_; _<′_; ≤′-refl)
+open import Data.Nat.Induction using (<′-wellFounded)
 open import Data.Product using (_×_; _,_; ∃-syntax)
 open import Data.String using (String; _==_)
 open import Data.Sum using (_⊎_)
 open import Data.Unit.Polymorphic using (⊤)
-open import Level using (Level; _⊔_)
+open import Induction.WellFounded using (WellFounded; Acc)
+open import Level using (Level; 0ℓ; _⊔_)
+open import Relation.Binary using (Rel)
 open import Relation.Binary.PropositionalEquality using (_≡_; subst)
 open import Relation.Binary.Structures using (IsDecEquivalence)
 open import Relation.Nullary using (yes; no)
@@ -28,6 +31,7 @@ open Fin
 open List
 open ℕ
 open _⊎_
+open Acc
 open _≡_
 
 private variable
@@ -86,10 +90,23 @@ data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ�
   ∃〔_〕_ : (s : Shapeˢᵗᵈ C) → (Positionˢᵗᵈ C s → Result C α) → Result C α
   ∀〔_〕_ : (s : Shapeˢᵗᵈ C) → (Positionˢᵗᵈ C s → Result C α) → Result C α
 
-unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Result C α → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-unfold (res v) o = o ≡ v
-unfold (∃〔 _ 〕 c) o = ∃[ p ] unfold (c p) o
-unfold (∀〔 _ 〕 c) o = ∀ p → unfold (c p) o
+unfold-r : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Result C α → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold-r (res v) o x = o ≡ v → x
+unfold-r (∃〔 _ 〕 c) o x = ∃[ p ] unfold-r (c p) o x
+unfold-r (∀〔 _ 〕 c) o x = ∀ p → unfold-r (c p) o x
+
+_<_ : {α : Set ℓ} → Rel (List⁺ α) 0ℓ
+xs < ys = length⁺ xs <′ length⁺ ys
+
+<-wf : {α : Set ℓ} → WellFounded (_<_ {α = α})
+<-wf xs = acc<′⇒acc< (<′-wellFounded (length⁺ xs))
+  where
+    acc<′⇒acc< : {α : Set ℓ} → {xs : List⁺ α} → Acc _<′_ (length⁺ xs) → Acc _<_ xs
+    acc<′⇒acc< (acc h) = acc λ hlt → acc<′⇒acc< (h hlt)
+
+unfold-rs : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → (rs : List⁺ (Result C α)) → Acc _<_ rs → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold-rs (r ∷ []) _ o x = unfold-r r o x
+unfold-rs (r₁ ∷ r₂ ∷ rs) (acc h) o x = unfold-r r₁ o x × unfold-rs (r₂ ∷ rs) (h ≤′-refl) o x
 
 record Container (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
   constructor _▷_
@@ -153,8 +170,8 @@ containerize {C = C} {n = n} d prev α with containerize-dis d prev
     position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
 
 extend : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → (Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-extend {α = α} (val (x , leastFP , _ , d , prev)) w _ = ∃[ s ] ∀ {i} → foldr (λ r acc → unfold r i ⊎ acc) (λ r → unfold r i) (Position (containerize d prev α) s x) → w i
-extend {α = α} (val (x , greatestFP , _ , d , prev)) _ m = ∃[ s ] ∀ {i} → foldr (λ r acc → unfold r i ⊎ acc) (λ r → unfold r i) (Position (containerize d prev α) s x) → m i
+extend {α = α} (val (x , leastFP , _ , d , prev)) w _ = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold-rs rs (<-wf rs) o (w o)
+extend {α = α} (val (x , greatestFP , _ , d , prev)) _ m = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold-rs rs (<-wf rs) o (m o)
 extend done _ _ = ⊤
 extend fail _ _ = ⊥
 
