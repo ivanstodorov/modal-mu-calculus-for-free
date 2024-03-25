@@ -11,7 +11,7 @@ open import Data.Fin using (Fin; _≟_; toℕ)
 open import Data.List using (List; length; findIndexᵇ) renaming (lookup to lookup')
 open import Data.List.NonEmpty using (List⁺; [_]; _∷⁺_; foldr; toList) renaming (length to length⁺)
 open import Data.Maybe using (just; nothing)
-open import Data.Nat using (ℕ; _∸_)
+open import Data.Nat using (ℕ)
 open import Data.Product using (_×_; _,_; ∃-syntax)
 open import Data.String using (String; _==_)
 open import Data.Sum using (_⊎_)
@@ -71,9 +71,9 @@ data Previous (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set (ℓ₁ ⊔ �
   〔_〕 : FixedPoint × Formulaᵈⁿᶠ-dis C (suc zero) → Previous C (suc zero)
   _∷_ : ∀ {n} → FixedPoint × Formulaᵈⁿᶠ-dis C (suc n) → Previous C n → Previous C (suc n)
 
-lookup : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Previous C n → (i : Fin n) → FixedPoint × Formulaᵈⁿᶠ-dis C (n ∸ toℕ i) × Previous C (n ∸ toℕ i)
-lookup prev@(〔 fp , C 〕) zero = fp , C , prev
-lookup prev@((fp , C) ∷ _) zero = fp , C , prev
+lookup : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n₁ : ℕ} → Previous C n₁ → Fin n₁ → FixedPoint × ∃[ n₂ ] Formulaᵈⁿᶠ-dis C (suc n₂) × Previous C (suc n₂)
+lookup prev@(〔 fp , C 〕) zero = fp , zero , C , prev
+lookup {n₁ = suc n} prev@((fp , C) ∷ _) zero = fp , n , C , prev
 lookup (_ ∷ prev) (suc i) = lookup prev i
 
 data Maybe' (α : Set ℓ) : Set ℓ where
@@ -114,10 +114,6 @@ apply (⟦ af ⟧ m) (impure (s , c)) f with af ⊩ᵃᶠ s
 ... | true = ∀〔 s 〕 λ p → apply m (c p) f
 apply ε x f = f (val x)
 
-n∸fin[n]≡suc : (n : ℕ) → (i : Fin n) → ∃[ x ] n ∸ toℕ i ≡ suc x
-n∸fin[n]≡suc (suc n) zero = n , refl
-n∸fin[n]≡suc (suc n) (suc i) = n∸fin[n]≡suc n i
-
 containerize-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n₁ : ℕ} → Formulaᵈⁿᶠ-var C (suc n₁) → Previous C (suc n₁) → ModalitySequence C × Maybe' (FixedPoint × ∃[ n₂ ] Formulaᵈⁿᶠ-dis C (suc n₂) × Previous C (suc n₂))
 containerize-var trueᵈⁿᶠ _ = ε , done
 containerize-var falseᵈⁿᶠ _ = ε , fail
@@ -127,9 +123,7 @@ containerize-var ([ af ]ᵈⁿᶠ v) prev with containerize-var v prev
 ... | m , x = ⟦ af ⟧ m , x
 containerize-var {n₁ = n₁} (μᵈⁿᶠ d) prev = ε , (val (leastFP , suc n₁ , d , (leastFP , d) ∷ prev))
 containerize-var {n₁ = n₁} (νᵈⁿᶠ d) prev = ε , (val (greatestFP , suc n₁ , d , (greatestFP , d) ∷ prev))
-containerize-var {C = C} {n₁ = n₁} (refᵈⁿᶠ i) prev with n∸fin[n]≡suc (suc n₁) i | lookup prev i
-... | n₂ , h | fp , d , prev with subst (Formulaᵈⁿᶠ-dis C) h d | subst (Previous C) h prev
-...   | d | prev = ε , (val (fp , n₂ , d , prev))
+containerize-var {C = C} {n₁ = n₁} (refᵈⁿᶠ i) prev = ε , val lookup prev i
 
 containerize-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n₁ : ℕ} → Formulaᵈⁿᶠ-con C (suc n₁) → Previous C (suc n₁) → List⁺ (ModalitySequence C × Maybe' (FixedPoint × ∃[ n₂ ] Formulaᵈⁿᶠ-dis C (suc n₂) × Previous C (suc n₂)))
 containerize-con (con-var v) prev = [ containerize-var v prev ]
