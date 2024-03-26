@@ -63,11 +63,7 @@ f ⊩ x = f→fⁱ f [] ⊩ⁱ x
     ref⁺' (μⁱ fⁱ) x = μⁱ ref⁺' fⁱ (suc x)
     ref⁺' (νⁱ fⁱ) x = νⁱ ref⁺' fⁱ (suc x)
     ref⁺' (refⁱ i) x with toℕ i <ᵇ toℕ x
-    ... | false = refⁱ inject₁⁺ i
-      where
-      inject₁⁺ : {n : ℕ} → Fin n → Fin (suc n)
-      inject₁⁺ zero = suc zero
-      inject₁⁺ (suc n) = suc (inject₁⁺ n)
+    ... | false = refⁱ suc i
     ... | true = refⁱ inject₁ i
 
   f→fⁱ : {C : Container ℓ₁ ℓ₂} → Formula C → (xs : List String) → Formulaⁱ C (length xs)
