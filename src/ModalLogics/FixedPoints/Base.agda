@@ -41,9 +41,9 @@ data Formulaᵈⁿᶠ-var (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set �
 data Formulaᵈⁿᶠ-con (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
 data Formulaᵈⁿᶠ-dis (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
 
-infix 55 refᵈⁿᶠ_
-infix 50 ⟨_⟩ᵈⁿᶠ_
-infix 50 [_]ᵈⁿᶠ_
+infix 60 refᵈⁿᶠ_
+infix 55 ⟨_⟩ᵈⁿᶠ_
+infix 55 [_]ᵈⁿᶠ_
 infix 50 μᵈⁿᶠ_
 infix 50 νᵈⁿᶠ_
 
@@ -212,13 +212,13 @@ _⊩ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = S
 dis-con c ⊩ᵈ x = c ⊩ᶜ x
 c ∨ᵈⁿᶠ d ⊩ᵈ x = (c ⊩ᶜ x) ⊎ (d ⊩ᵈ x)
 
-infix 45 refⁱ_
-infix 40 ¬ⁱ_
-infixr 35 _∧ⁱ_
-infixr 35 _∨ⁱ_
+infix 60 refⁱ_
+infix 55 ¬ⁱ_
+infix 50 ⟨_⟩ⁱ_
+infix 50 [_]ⁱ_
+infixr 45 _∧ⁱ_
+infixr 40 _∨ⁱ_
 infixr 35 _⇒ⁱ_
-infix 30 ⟨_⟩ⁱ_
-infix 30 [_]ⁱ_
 infix 30 μⁱ_
 infix 30 νⁱ_
 
@@ -235,11 +235,11 @@ infix 25 _⊩ⁱ_
 _⊩ⁱ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaⁱ C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
   where
-  infix 45 ref'〔_〕_
-  infixr 35 _∧'_
-  infixr 35 _∨'_
-  infix 30 ⟨_⟩'_
-  infix 30 [_]'_
+  infix 60 ref'〔_〕_
+  infix 50 ⟨_⟩'_
+  infix 50 [_]'_
+  infixr 45 _∧'_
+  infixr 40 _∨'_
   infix 30 μ'_
   infix 30 ν'_
 
@@ -337,13 +337,13 @@ fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
   f'→fᵈⁿᶠ (ref'〔 false 〕 _) = dis-con con-var falseᵈⁿᶠ
   f'→fᵈⁿᶠ (ref'〔 true 〕 i) = dis-con (con-var (refᵈⁿᶠ i))
 
-infix 45 ref_
-infix 40 ¬_
-infixr 35 _∧_
-infixr 35 _∨_
+infix 60 ref_
+infix 55 ¬_
+infix 50 ⟨_⟩_
+infix 50 [_]_
+infixr 45 _∧_
+infixr 40 _∨_
 infixr 35 _⇒_
-infix 30 ⟨_⟩_
-infix 30 [_]_
 infix 30 μ_．_
 infix 30 ν_．_
 

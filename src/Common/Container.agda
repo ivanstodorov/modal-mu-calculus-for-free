@@ -20,8 +20,6 @@ open IsDecEquivalence ⦃...⦄ hiding (refl)
 private variable
   ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ ℓ₅ ℓ₆ : Level
 
-infixr 20 _:+:_
-
 _:+:_ : Container ℓ₁ ℓ₂ → Container ℓ₃ ℓ₄ → Container (ℓ₁ ⊔ ℓ₃) (ℓ₂ ⊔ ℓ₄)
 Shape (C₁ :+: C₂) = Shape C₁ ⊎ Shape C₂
 Position (_:+:_ {ℓ₂ = ℓ₂} {ℓ₄ = ℓ₄} C₁ C₂) (inj₁ s) = Lift (ℓ₂ ⊔ ℓ₄) (Position C₁ s)
@@ -46,8 +44,6 @@ instance
     proof (effectSumEqDec (inj₂ s₁) (inj₂ s₂)) with s₁ ≟ s₂
     ... | yes refl = ofʸ refl
     ... | no ¬p = ofⁿ λ { refl → ¬p refl }
-
-infix 20 _:<:_
 
 record _:<:_ (C₁ : Container ℓ₁ ℓ₂) (C₂ : Container ℓ₃ ℓ₄) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄) where
   field

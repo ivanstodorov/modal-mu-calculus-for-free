@@ -20,12 +20,12 @@ open IsDecEquivalence ⦃...⦄
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-infix 40 ¬_
-infixr 35 _∧_
+infix 50 ¬_
+infix 45 ⟨_⟩_
+infix 45 [_]_
+infixr 40 _∧_
 infixr 35 _∨_
-infixr 35 _⇒_
-infix 30 ⟨_⟩_
-infix 30 [_]_
+infixr 30 _⇒_
 
 data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C
@@ -60,3 +60,4 @@ infix 25 _▸_⊩_!_
 
 _▸_⊩_!_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ℕ → Formula C → RecursiveProgram C I O → I → Set ℓ₂
 n ▸ f ⊩ x ! i = f ⊩ (recursionHandler x n) i
+ 

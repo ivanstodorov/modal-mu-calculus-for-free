@@ -22,12 +22,12 @@ open IsDecEquivalence ⦃...⦄
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-infix 40 ¬_
-infixr 35 _∧_
+infix 50 ¬_
+infix 45 ⟨_⟩_
+infix 45 [_]_
+infixr 40 _∧_
 infixr 35 _∨_
-infixr 35 _⇒_
-infix 30 ⟨_⟩_
-infix 30 [_]_
+infixr 30 _⇒_
 
 data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C

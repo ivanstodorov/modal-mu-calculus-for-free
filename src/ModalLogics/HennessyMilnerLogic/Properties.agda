@@ -169,22 +169,22 @@ to (⟨s⟩false⇔false s₁ (impure (s₂ , _))) h∃ with s₁ ≟ s₂
 to (⟨s⟩false⇔false s (impure (.s , _))) () | yes refl
 from (⟨s⟩false⇔false _ _) ()
 
-⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → ⟨ s ⟩ f₁ ∨ f₂ ⊩ x ⇔ (⟨ s ⟩ f₁) ∨ (⟨ s ⟩ f₂) ⊩ x
-to (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s₁ _ _ (impure (s₂ , _))) h∃ with s₁ ≟ s₂
+⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → ⟨ s ⟩ (f₁ ∨ f₂) ⊩ x ⇔ ⟨ s ⟩ f₁ ∨ ⟨ s ⟩ f₂ ⊩ x
+to (⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ s₁ _ _ (impure (s₂ , _))) h∃ with s₁ ≟ s₂
 ... | no _ = ⊥-elim h∃
-to (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s _ _ (impure (.s , _))) (p , inj₁ h₁) | yes refl = inj₁ (p , h₁)
-to (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s _ _ (impure (.s , _))) (p , inj₂ h₂) | yes refl = inj₂ (p , h₂)
-from (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s₁ _ _ (impure (s₂ , _))) (inj₁ h∃₁) with s₁ ≟ s₂
+to (⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ s _ _ (impure (.s , _))) (p , inj₁ h₁) | yes refl = inj₁ (p , h₁)
+to (⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ s _ _ (impure (.s , _))) (p , inj₂ h₂) | yes refl = inj₂ (p , h₂)
+from (⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ s₁ _ _ (impure (s₂ , _))) (inj₁ h∃₁) with s₁ ≟ s₂
 ... | no _ = ⊥-elim h∃₁
-from (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s _ _ (impure (.s , _))) (inj₁ (p , h₁)) | yes refl = (p , inj₁ h₁)
-from (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s₁ _ _ (impure (s₂ , _))) (inj₂ h∃₂) with s₁ ≟ s₂
+from (⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ s _ _ (impure (.s , _))) (inj₁ (p , h₁)) | yes refl = (p , inj₁ h₁)
+from (⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ s₁ _ _ (impure (s₂ , _))) (inj₂ h∃₂) with s₁ ≟ s₂
 ... | no _ = ⊥-elim h∃₂
-from (⟨s⟩f₁∨f₂⇔|⟨s⟩f₁|∨|⟨s⟩f₂| s _ _ (impure (.s , _))) (inj₂ (p , h₂)) | yes refl = (p , inj₂ h₂)
+from (⟨s⟩|f₁∨f₂|⇔⟨s⟩f₁∨⟨s⟩f₂ s _ _ (impure (.s , _))) (inj₂ (p , h₂)) | yes refl = (p , inj₂ h₂)
 
-|⟨s⟩f₁|∧|[s]f₂|→⟨s⟩f₁∧f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → (⟨ s ⟩ f₁) ∧ ([ s ] f₂) ⊩ x → ⟨ s ⟩ f₁ ∧ f₂ ⊩ x
-|⟨s⟩f₁|∧|[s]f₂|→⟨s⟩f₁∧f₂ s₁ _ _ (impure (s₂ , _)) _ with s₁ ≟ s₂
-|⟨s⟩f₁|∧|[s]f₂|→⟨s⟩f₁∧f₂ s₁ _ _ (impure (s₂ , _)) () | no _
-|⟨s⟩f₁|∧|[s]f₂|→⟨s⟩f₁∧f₂ s _ _ (impure (.s , _)) ((p , h₁) , h∀₂) | yes refl = p , h₁ , h∀₂ p
+⟨s⟩f₁∧[s]f₂→⟨s⟩|f₁∧f₂| : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → ⟨ s ⟩ f₁ ∧ [ s ] f₂ ⊩ x → ⟨ s ⟩ (f₁ ∧ f₂) ⊩ x
+⟨s⟩f₁∧[s]f₂→⟨s⟩|f₁∧f₂| s₁ _ _ (impure (s₂ , _)) _ with s₁ ≟ s₂
+⟨s⟩f₁∧[s]f₂→⟨s⟩|f₁∧f₂| s₁ _ _ (impure (s₂ , _)) () | no _
+⟨s⟩f₁∧[s]f₂→⟨s⟩|f₁∧f₂| s _ _ (impure (.s , _)) ((p , h₁) , h∀₂) | yes refl = p , h₁ , h∀₂ p
 
 -- Theorems for [_]_
 
@@ -206,19 +206,19 @@ from ([s]true⇔true s₁ (impure (s₂ , _))) _ with s₁ ≟ s₂
 ... | no _ = tt
 ... | yes refl = const tt
 
-[s]f₁∧f₂⇔|[s]f₁|∧|[s]f₂| : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → [ s ] f₁ ∧ f₂ ⊩ x ⇔ ([ s ] f₁) ∧ ([ s ] f₂) ⊩ x
-to ([s]f₁∧f₂⇔|[s]f₁|∧|[s]f₂| _ _ _ (pure _)) _ = tt , tt
-to ([s]f₁∧f₂⇔|[s]f₁|∧|[s]f₂| s₁ _ _ (impure (s₂ , _))) h∀ with s₁ ≟ s₂
+[s]|f₁∧f₂|⇔[s]f₁∧[s]f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → [ s ] (f₁ ∧ f₂) ⊩ x ⇔ [ s ] f₁ ∧ [ s ] f₂ ⊩ x
+to ([s]|f₁∧f₂|⇔[s]f₁∧[s]f₂ _ _ _ (pure _)) _ = tt , tt
+to ([s]|f₁∧f₂|⇔[s]f₁∧[s]f₂ s₁ _ _ (impure (s₂ , _))) h∀ with s₁ ≟ s₂
 ... | no _ = tt , tt
 ... | yes refl = (proj₁ ∘ h∀) , (proj₂ ∘ h∀)
-from ([s]f₁∧f₂⇔|[s]f₁|∧|[s]f₂| _ _ _ (pure _)) _ = tt
-from ([s]f₁∧f₂⇔|[s]f₁|∧|[s]f₂| s₁ _ _ (impure (s₂ , _))) _ with s₁ ≟ s₂
+from ([s]|f₁∧f₂|⇔[s]f₁∧[s]f₂ _ _ _ (pure _)) _ = tt
+from ([s]|f₁∧f₂|⇔[s]f₁∧[s]f₂ s₁ _ _ (impure (s₂ , _))) _ with s₁ ≟ s₂
 ... | no _ = tt
-from ([s]f₁∧f₂⇔|[s]f₁|∧|[s]f₂| s _ _ (impure (.s , _))) (h∀₁ , h∀₂) | yes refl = λ p → h∀₁ p , h∀₂ p
+from ([s]|f₁∧f₂|⇔[s]f₁∧[s]f₂ s _ _ (impure (.s , _))) (h∀₁ , h∀₂) | yes refl = λ p → h∀₁ p , h∀₂ p
 
-[s]f₁∨f₂→|⟨s⟩f₁|∨|[s]f₂| : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → [ s ] f₁ ∨ f₂ ⊩ x → (⟨ s ⟩ f₁) ∨ ([ s ] f₂) ⊩ x
-[s]f₁∨f₂→|⟨s⟩f₁|∨|[s]f₂| _ _ _ (pure _) _ = inj₂ tt
-[s]f₁∨f₂→|⟨s⟩f₁|∨|[s]f₂| s₁ f₁ f₂ x@(impure (s₂ , _)) h with ⊩-dec (⟨ s₁ ⟩ f₁) x
+[s]|f₁∨f₂|→⟨s⟩f₁∨[s]f₂ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → (s : Shape C) → (f₁ f₂ : Formula C) → (x : C ⋆ α) → [ s ] (f₁ ∨ f₂) ⊩ x → ⟨ s ⟩ f₁ ∨ [ s ] f₂ ⊩ x
+[s]|f₁∨f₂|→⟨s⟩f₁∨[s]f₂ _ _ _ (pure _) _ = inj₂ tt
+[s]|f₁∨f₂|→⟨s⟩f₁∨[s]f₂ s₁ f₁ f₂ x@(impure (s₂ , _)) h with ⊩-dec (⟨ s₁ ⟩ f₁) x
 ... | yes h∃ = inj₁ h∃
 ... | no h¬∃ with ⊩-dec ([ s₁ ] f₂) x
 ...   | yes h∀ = inj₂ h∀

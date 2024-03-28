@@ -25,13 +25,13 @@ open Formulaⁱ
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-infix 45 ref_
-infix 40 ¬_
-infixr 35 _∧_
-infixr 35 _∨_
+infix 60 ref_
+infix 55 ¬_
+infix 50 ⟨_⟩_
+infix 50 [_]_
+infixr 45 _∧_
+infixr 40 _∨_
 infixr 35 _⇒_
-infix 30 ⟨_⟩_
-infix 30 [_]_
 infix 30 μ_．_
 infix 30 ν_．_
 

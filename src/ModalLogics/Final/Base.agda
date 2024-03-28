@@ -45,13 +45,13 @@ data Inhabited (α : Set ℓ) : Set ℓ where
 
 module ActionFormulas where
 
-  infix 110 val_
-  infix 110 act_
-  infix 105 ¬_
-  infixr 100 _∩_
-  infixr 100 _∪_
-  infix 95 ∀〔_〕_
-  infix 95 ∃〔_〕_
+  infix 125 val_
+  infix 125 act_
+  infix 120 ¬_
+  infixr 115 _∩_
+  infixr 110 _∪_
+  infix 105 ∀〔_〕_
+  infix 105 ∃〔_〕_
 
   data ActionFormula (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (ℓ : Level) : Set ((sucˡ ℓ) ⊔ ℓ₁) where
     true false : ActionFormula C ℓ
@@ -80,11 +80,11 @@ open ActionFormulas using (ActionFormula) renaming (_⊩_ to _⊩ᵃᶠ_)
 
 module RegularFormulas where
 
-  infix 90 actF_
-  infix 85 _*
-  infix 85 _⁺
-  infixr 80 _·_
-  infixr 80 _+_
+  infix 100 actF_
+  infix 95 _*
+  infix 95 _⁺
+  infixr 90 _·_
+  infixr 85 _+_
 
   data RegularFormula (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (ℓ : Level) : Set ((sucˡ ℓ) ⊔ ℓ₁) where
     ε : RegularFormula C ℓ
@@ -120,10 +120,10 @@ data Parameterizedᵈⁿᶠ {n : ℕ} (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (ℓ
   quantifiedᵈⁿᶠ_ : ∀ {αs} → Quantifiedᵈⁿᶠ C ℓ xs αs → Parameterizedᵈⁿᶠ C ℓ xs []
   _↦ᵈⁿᶠ_ : ∀ {αs : List (Set ℓ)} → (α : Set ℓ) → (α → Parameterizedᵈⁿᶠ C ℓ xs αs) → Parameterizedᵈⁿᶠ C ℓ xs (α ∷ αs)
 
-infix 75 valᵈⁿᶠ_
-infix 75 refᵈⁿᶠ_．_
-infix 70 ⟨_⟩ᵈⁿᶠ_
-infix 70 [_]ᵈⁿᶠ_
+infix 80 valᵈⁿᶠ_
+infix 80 refᵈⁿᶠ_．_
+infix 75 ⟨_⟩ᵈⁿᶠ_
+infix 75 [_]ᵈⁿᶠ_
 infix 70 μᵈⁿᶠ_．_
 infix 70 νᵈⁿᶠ_．_
 
@@ -316,16 +316,16 @@ data Parameterizedⁱ {n : ℕ} (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (ℓ : Lev
   quantified_ : ∀ {αs} → Quantifiedⁱ C ℓ xs αs → Parameterizedⁱ C ℓ xs []
   _↦_ : ∀ {αs : List (Set ℓ)} → (α : Set ℓ) → (α → Parameterizedⁱ C ℓ xs αs) → Parameterizedⁱ C ℓ xs (α ∷ αs)
 
-infix 60 val_
-infix 60 ref_．_
-infix 55 ¬_
-infixr 50 _∧_
-infixr 50 _∨_
-infixr 50 _⇒_
-infix 50 ⟨_⟩_
-infix 50 [_]_
-infix 50 ν_．_
+infix 80 val_
+infix 80 ref_．_
+infix 75 ¬_
+infix 70 ⟨_⟩_
+infix 70 [_]_
+infixr 65 _∧_
+infixr 60 _∨_
+infixr 55 _⇒_
 infix 50 μ_．_
+infix 50 ν_．_
 
 data Formulaⁱ C ℓ where
   true false : ∀ {xs} → Formulaⁱ C ℓ xs
@@ -346,10 +346,10 @@ _⊩_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shap
 ∃〔 _ 〕 qⁱ ⊩ x = ∃[ a ] qⁱ a ⊩ x
 formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
   where
-  infix 90 actF'_
-  infix 85 _*'
-  infixr 80 _·'_
-  infixr 80 _+'_
+  infix 100 actF'_
+  infix 95 _*'
+  infixr 90 _·'_
+  infixr 85 _+'_
 
   data RegularFormula' (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (ℓ : Level) : Set ((sucˡ ℓ) ⊔ ℓ₁) where
     ε' : RegularFormula' C ℓ
@@ -386,16 +386,16 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
     quantified'_ : ∀ {αs} → Quantified' C ℓ xs αs → Parameterized' C ℓ xs []
     _↦'_ : ∀ {αs : List (Set ℓ)} → (α : Set ℓ) → (α → Parameterized' C ℓ xs αs) → Parameterized' C ℓ xs (α ∷ αs)
 
-  infix 60 val'_
-  infix 60 ref'_．_
-  infix 55 ¬'_
-  infixr 50 _∧'_
-  infixr 50 _∨'_
-  infixr 50 _⇒'_
-  infix 50 ⟨_⟩'_
-  infix 50 [_]'_
-  infix 50 ν'_．_
+  infix 80 val'_
+  infix 80 ref'_．_
+  infix 75 ¬'_
+  infix 70 ⟨_⟩'_
+  infix 70 [_]'_
+  infixr 65 _∧'_
+  infixr 60 _∨'_
+  infixr 55 _⇒'_
   infix 50 μ'_．_
+  infix 50 ν'_．_
 
   data Formula' C ℓ where
     true' false' : ∀ {xs} → Formula' C ℓ xs
@@ -506,14 +506,14 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
     quantified''_ : ∀ {αs} → Quantified'' C ℓ xs αs → Parameterized'' C ℓ xs []
     _↦''_ : ∀ {αs : List (Set ℓ)} → (α : Set ℓ) → (α → Parameterized'' C ℓ xs αs) → Parameterized'' C ℓ xs (α ∷ αs)
 
-  infix 60 val''_
-  infix 60 ref''〔_〕_．_
-  infixr 50 _∧''_
-  infixr 50 _∨''_
-  infix 50 ⟨_⟩''_
-  infix 50 [_]''_
-  infix 50 ν''_．_
+  infix 80 val''_
+  infix 80 ref''〔_〕_．_
+  infix 70 ⟨_⟩''_
+  infix 70 [_]''_
+  infixr 65 _∧''_
+  infixr 60 _∨''_
   infix 50 μ''_．_
+  infix 50 ν''_．_
 
   data Formula'' C ℓ where
     true'' false'' : ∀ {xs} → Formula'' C ℓ xs
