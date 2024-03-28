@@ -1,5 +1,5 @@
 {-# OPTIONS --without-K --guardedness #-}
-module ModalLogics.Final.Properties where
+module ModalLogics.DataParameters.Properties where
 
 open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Container using (Container; Shape)
@@ -9,7 +9,7 @@ open import Data.Maybe using (Maybe)
 open import Data.Nat using (ℕ)
 open import Data.Sum using (_⊎_)
 open import Level using (Level)
-open import ModalLogics.Final.Base using (Formula; _⊩_; _⊩_!_; _▸_⊩_!_)
+open import ModalLogics.DataParameters.Base using (Formula; _⊩_; _⊩_!_; _▸_⊩_!_)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
 open import Relation.Nullary using (Dec; _because_)

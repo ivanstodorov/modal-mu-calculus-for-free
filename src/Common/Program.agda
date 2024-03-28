@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K --safe --overlapping-instances #-}
+{-# OPTIONS --without-K --safe #-}
 module Common.Program where
 
 open import Common.Container using (_:+:_; _:<:_)

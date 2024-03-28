@@ -1,5 +1,5 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
-module ModalLogics.Final.Base where
+module ModalLogics.DataParameters.Base where
 
 open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Bool using (Bool; not; T)
