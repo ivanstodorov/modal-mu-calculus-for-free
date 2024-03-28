@@ -90,10 +90,10 @@ data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ�
   ∃ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α) → Result C α
   ∀ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α) → Result C α
 
-unfold-r : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Result C α → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-unfold-r (res v) o x = o ≡ v → x
-unfold-r (∃ʳ c) o x = ∃[ p ] unfold-r (c p) o x
-unfold-r (∀ʳ c) o x = ∀ p → unfold-r (c p) o x
+unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Result C α → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold (res v) o x = o ≡ v → x
+unfold (∃ʳ c) o x = ∃[ p ] unfold (c p) o x
+unfold (∀ʳ c) o x = ∀ p → unfold (c p) o x
 
 _<_ : {α : Set ℓ} → Rel (List⁺ α) 0ℓ
 xs < ys = length⁺ xs <′ length⁺ ys
@@ -104,9 +104,9 @@ xs < ys = length⁺ xs <′ length⁺ ys
     acc<′⇒acc< : {α : Set ℓ} → {xs : List⁺ α} → Acc _<′_ (length⁺ xs) → Acc _<_ xs
     acc<′⇒acc< (acc h) = acc λ hlt → acc<′⇒acc< (h hlt)
 
-unfold-rs : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → (rs : List⁺ (Result C α)) → Acc _<_ rs → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-unfold-rs (r ∷ []) _ o x = unfold-r r o x
-unfold-rs (r₁ ∷ r₂ ∷ rs) (acc h) o x = unfold-r r₁ o x × unfold-rs (r₂ ∷ rs) (h ≤′-refl) o x
+unfold⁺ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → (rs : List⁺ (Result C α)) → Acc _<_ rs → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold⁺ (r ∷ []) _ o x = unfold r o x
+unfold⁺ (r₁ ∷ r₂ ∷ rs) (acc h) o x = unfold r₁ o x × unfold⁺ (r₂ ∷ rs) (h ≤′-refl) o x
 
 record Container (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
   constructor _▷_
@@ -164,25 +164,25 @@ containerize {C = C} {n = n} d prev α with containerize-dis d prev
     position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
 
 extend : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → (Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-extend {α = α} (val (x , leastFP , _ , d , prev)) w _ = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold-rs rs (<-wf rs) o (w o)
-extend {α = α} (val (x , greatestFP , _ , d , prev)) _ m = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold-rs rs (<-wf rs) o (m o)
+extend {α = α} (val (x , leastFP , _ , d , prev)) w _ = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold⁺ rs (<-wf rs) o (w o)
+extend {α = α} (val (x , greatestFP , _ , d , prev)) _ m = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold⁺ rs (<-wf rs) o (m o)
 extend done _ _ = ⊤
 extend fail _ _ = ⊥
 
-record WI {C : Containerˢᵗᵈ ℓ₁ ℓ₂} ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ {α : Set ℓ₃} (_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record MI {C : Containerˢᵗᵈ ℓ₁ ℓ₂} ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ {α : Set ℓ₃} (_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record W {C : Containerˢᵗᵈ ℓ₁ ℓ₂} ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ {α : Set ℓ₃} (_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record M {C : Containerˢᵗᵈ ℓ₁ ℓ₂} ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ {α : Set ℓ₃} (_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 
-record WI i where
+record W i where
   inductive
-  constructor wi
+  constructor wᶜ
   field
-    In : extend i WI MI
+    In : extend i W M
 
-record MI i where
+record M i where
   coinductive
-  constructor mi
+  constructor mᶜ
   field
-    Ni : extend i WI MI
+    Ni : extend i W M
 
 infix 25 _⊩ᵛ_
 
@@ -197,8 +197,8 @@ falseᵈⁿᶠ ⊩ᵛ _ = ⊥
 [ af ]ᵈⁿᶠ v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
 ... | false = ⊤
 ... | true = ∀ p → v ⊩ᵛ c p
-μᵈⁿᶠ d ⊩ᵛ x = WI (val (x , leastFP , zero , d , 〔 leastFP , d 〕))
-νᵈⁿᶠ d ⊩ᵛ x = MI (val (x , greatestFP , zero , d , 〔 greatestFP , d 〕))
+μᵈⁿᶠ d ⊩ᵛ x = W (val (x , leastFP , zero , d , 〔 leastFP , d 〕))
+νᵈⁿᶠ d ⊩ᵛ x = M (val (x , greatestFP , zero , d , 〔 greatestFP , d 〕))
 
 infix 25 _⊩ᶜ_
 

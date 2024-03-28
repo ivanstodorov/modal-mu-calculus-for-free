@@ -45,27 +45,27 @@ data FixedPoint : Set where
   leastFP : FixedPoint
   greatestFP : FixedPoint
 
-⟦_⟧ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → (xs : Vec (FixedPoint × Container C α (suc n)) (suc n)) → (Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-⟦ xs ⟧ w m (val (i , n)) = case lookup xs n of λ { (leastFP , (_ ▷ P)) → ∃[ s ] ∀ {x} → foldr (_⊎_ ∘ (unfold x)) (unfold x) (P s i) → w x ; (greatestFP , (_ ▷ P)) → ∃[ s ] ∀ {x} → foldr (_⊎_ ∘ (unfold x)) (unfold x) (P s i) → m x }
+extend : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → (xs : Vec (FixedPoint × Container C α (suc n)) (suc n)) → (Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+extend xs w m (val (i , n)) = case lookup xs n of λ { (leastFP , (_ ▷ P)) → ∃[ s ] ∀ {x} → foldr (_⊎_ ∘ (unfold x)) (unfold x) (P s i) → w x ; (greatestFP , (_ ▷ P)) → ∃[ s ] ∀ {x} → foldr (_⊎_ ∘ (unfold x)) (unfold x) (P s i) → m x }
   where
   unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Maybe' ((C ⋆ α) × Fin n) → Result C α n → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
   unfold x (val v) = x ≡ v
   unfold x (∃〔 _ 〕 f) = ∃[ p ] unfold x (f p)
   unfold x (∀〔 _ 〕 f) = ∀ p → unfold x (f p)
-⟦ _ ⟧ _ _ done = ⊤
-⟦ _ ⟧ _ _ fail = ⊥
+extend _ _ _ done = ⊤
+extend _ _ _ fail = ⊥
 
-record WI {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' ((C ⋆ α) × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record MI {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' ((C ⋆ α) × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record W {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' ((C ⋆ α) × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record M {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' ((C ⋆ α) × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 
-record WI xs n where
+record W xs n where
   inductive
-  constructor wi
+  constructor wᶜ
   field
-    In : ⟦ xs ⟧ (WI xs) (MI xs) n
+    In : extend xs (W xs) (M xs) n
 
-record MI xs n where
+record M xs n where
   coinductive
-  constructor mi
+  constructor mᶜ
   field
-    Ni : ⟦ xs ⟧ (WI xs) (MI xs) n
+    Ni : extend xs (W xs) (M xs) n

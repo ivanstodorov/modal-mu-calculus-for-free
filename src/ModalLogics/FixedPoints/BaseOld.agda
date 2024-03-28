@@ -2,7 +2,7 @@
 module ModalLogics.FixedPoints.BaseOld where
 
 open import Common.RegularFormulas using (ActionFormula; _⊩ᵃᶠ_)
-open import Common.FixedPointsOld using (Maybe'; Result; Container; FixedPoint; WI; MI; _▷_)
+open import Common.FixedPointsOld using (Maybe'; Result; Container; FixedPoint; W; M; _▷_)
 open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Bool using (Bool; not)
 open import Data.Container using (Shape) renaming (Container to Containerˢᵗᵈ)
@@ -305,8 +305,8 @@ fⁱ ⊩ⁱ x = maybe (λ d → d ⊩ᵈ x) ⊥ (f'→fᵈⁿᶠ (fⁱ→f' fⁱ
   [ af ] v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
   ... | false = ⊤
   ... | true = ∀ p → v ⊩ᵛ c p
-  _⊩ᵛ_ {α = α} (μ d) x = WI (proj₂ (containerize leastFP d zero [] α)) (val (x , zero))
-  _⊩ᵛ_ {α = α} (ν d) x = MI (proj₂ (containerize greatestFP d zero [] α)) (val (x , zero))
+  _⊩ᵛ_ {α = α} (μ d) x = W (proj₂ (containerize leastFP d zero [] α)) (val (x , zero))
+  _⊩ᵛ_ {α = α} (ν d) x = M (proj₂ (containerize greatestFP d zero [] α)) (val (x , zero))
 
   con-var v ⊩ᶜ x = v ⊩ᵛ x
   v ∧ c ⊩ᶜ x = (v ⊩ᵛ x) × (c ⊩ᶜ x)
