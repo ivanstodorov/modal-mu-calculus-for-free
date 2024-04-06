@@ -25,15 +25,15 @@ data ActionFormula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   ¬_ : ActionFormula C → ActionFormula C
   _∩_ _∪_ : ActionFormula C → ActionFormula C → ActionFormula C
 
-infix 25 _⊩ᵃᶠ_
+infix 25 _⊩_
 
-_⊩ᵃᶠ_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → ActionFormula C → Shape C → Bool
-true ⊩ᵃᶠ _ = true
-false ⊩ᵃᶠ _ = false
-act s₁ ⊩ᵃᶠ s₂ = ⌊ s₁ ≟ s₂ ⌋
-¬ af ⊩ᵃᶠ s = not (af ⊩ᵃᶠ s)
-af₁ ∪ af₂ ⊩ᵃᶠ s = af₁ ⊩ᵃᶠ s ∨ af₂ ⊩ᵃᶠ s
-af₁ ∩ af₂ ⊩ᵃᶠ s = af₁ ⊩ᵃᶠ s ∧ af₂ ⊩ᵃᶠ s
+_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → ActionFormula C → Shape C → Bool
+true ⊩ _ = true
+false ⊩ _ = false
+act s₁ ⊩ s₂ = ⌊ s₁ ≟ s₂ ⌋
+¬ af ⊩ s = not (af ⊩ s)
+af₁ ∪ af₂ ⊩ s = af₁ ⊩ s ∨ af₂ ⊩ s
+af₁ ∩ af₂ ⊩ s = af₁ ⊩ s ∧ af₂ ⊩ s
 
 infix 80 actF_
 infix 75 _*
@@ -46,19 +46,3 @@ data RegularFormula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   actF_ : ActionFormula C → RegularFormula C
   _·_ _+_ : RegularFormula C → RegularFormula C → RegularFormula C
   _* _⁺ : RegularFormula C → RegularFormula C
-
-data RegularFormula⁺ (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
-  ε : RegularFormula⁺ C
-  actF_ : ActionFormula C → RegularFormula⁺ C
-  _·_ _+_ : RegularFormula⁺ C → RegularFormula⁺ C → RegularFormula⁺ C
-  _* : RegularFormula⁺ C → RegularFormula⁺ C
-
-rf→rf⁺ : {C : Container ℓ₁ ℓ₂} → RegularFormula C → RegularFormula⁺ C
-rf→rf⁺ ε = ε
-rf→rf⁺ (actF af) = actF af
-rf→rf⁺ (rf₁ · rf₂) = rf→rf⁺ rf₁ · rf→rf⁺ rf₂
-rf→rf⁺ (rf₁ + rf₂) = rf→rf⁺ rf₁ + rf→rf⁺ rf₂
-rf→rf⁺ (rf *) = rf→rf⁺ rf *
-rf→rf⁺ (rf ⁺) = rf⁺ · (rf⁺ *)
-  where
-  rf⁺ = rf→rf⁺ rf

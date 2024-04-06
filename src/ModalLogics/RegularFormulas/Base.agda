@@ -1,8 +1,8 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.RegularFormulas.Base where
 
-open import Common.RegularFormulas using (RegularFormula; RegularFormula⁺; rf→rf⁺)
-open import Common.Program using (Program; RecursiveProgram; recursionHandler)
+open import Common.RegularFormulas using (ActionFormula; RegularFormula)
+open import Common.Program using (Program)
 open import Data.Bool using (true; false)
 open import Data.Container using (Container; Shape)
 open import Data.Container.FreeMonad using (_⋆_)
@@ -17,7 +17,7 @@ open import ModalLogics.FixedPoints.Base using (Formulaⁱ; _⊩ⁱ_)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
 
-open RegularFormula⁺
+open RegularFormula
 open Fin
 open List
 open Formulaⁱ
@@ -48,6 +48,27 @@ infix 25 _⊩_
 _⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   where
+  infix 80 actF'_
+  infix 75 _*'
+  infixr 70 _·'_
+  infixr 65 _+'_
+
+  data RegularFormula' (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
+    ε' : RegularFormula' C
+    actF'_ : ActionFormula C → RegularFormula' C
+    _·'_ _+'_ : RegularFormula' C → RegularFormula' C → RegularFormula' C
+    _*' : RegularFormula' C → RegularFormula' C
+
+  rf→rf' : {C : Container ℓ₁ ℓ₂} → RegularFormula C → RegularFormula' C
+  rf→rf' ε = ε'
+  rf→rf' (actF af) = actF' af
+  rf→rf' (rf₁ · rf₂) = rf→rf' rf₁ ·' rf→rf' rf₂
+  rf→rf' (rf₁ + rf₂) = rf→rf' rf₁ +' rf→rf' rf₂
+  rf→rf' (rf *) = rf→rf' rf *'
+  rf→rf' (rf ⁺) = rf' ·' (rf' *')
+    where
+    rf' = rf→rf' rf
+
   ref⁺ : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → Formulaⁱ C n → Formulaⁱ C (suc n)
   ref⁺ fⁱ = ref⁺' fⁱ zero
     where
@@ -73,34 +94,29 @@ f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   f→fⁱ (f₁ ∧ f₂) xs = f→fⁱ f₁ xs ∧ⁱ f→fⁱ f₂ xs
   f→fⁱ (f₁ ∨ f₂) xs = f→fⁱ f₁ xs ∨ⁱ f→fⁱ f₂ xs
   f→fⁱ (f₁ ⇒ f₂) xs = f→fⁱ f₁ xs ⇒ⁱ f→fⁱ f₂ xs
-  f→fⁱ (⟨ rf ⟩ f) xs = helper-∃ (rf→rf⁺ rf) (f→fⁱ f xs)
+  f→fⁱ (⟨ rf ⟩ f) xs = helper-∃ (rf→rf' rf) (f→fⁱ f xs)
     where
-    helper-∃ : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → RegularFormula⁺ C → Formulaⁱ C n → Formulaⁱ C n
-    helper-∃ ε fⁱ = fⁱ
-    helper-∃ (actF af) fⁱ = ⟨ af ⟩ⁱ fⁱ
-    helper-∃ (rf⁺₁ · rf⁺₂) fⁱ = helper-∃ rf⁺₁ (helper-∃ rf⁺₂ fⁱ)
-    helper-∃ (rf⁺₁ + rf⁺₂) fⁱ = helper-∃ rf⁺₁ fⁱ ∨ⁱ helper-∃ rf⁺₂ fⁱ
-    helper-∃ (rf⁺ *) fⁱ = μⁱ helper-∃ rf⁺ (refⁱ zero) ∨ⁱ ref⁺ fⁱ
-  f→fⁱ ([ rf ] f) xs = helper-∀ (rf→rf⁺ rf) (f→fⁱ f xs)
+    helper-∃ : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → RegularFormula' C → Formulaⁱ C n → Formulaⁱ C n
+    helper-∃ ε' fⁱ = fⁱ
+    helper-∃ (actF' af) fⁱ = ⟨ af ⟩ⁱ fⁱ
+    helper-∃ (rf⁺₁ ·' rf⁺₂) fⁱ = helper-∃ rf⁺₁ (helper-∃ rf⁺₂ fⁱ)
+    helper-∃ (rf⁺₁ +' rf⁺₂) fⁱ = helper-∃ rf⁺₁ fⁱ ∨ⁱ helper-∃ rf⁺₂ fⁱ
+    helper-∃ (rf⁺ *') fⁱ = μⁱ helper-∃ rf⁺ (refⁱ zero) ∨ⁱ ref⁺ fⁱ
+  f→fⁱ ([ rf ] f) xs = helper-∀ (rf→rf' rf) (f→fⁱ f xs)
     where
-    helper-∀ : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → RegularFormula⁺ C → Formulaⁱ C n → Formulaⁱ C n
-    helper-∀ ε fⁱ = fⁱ
-    helper-∀ (actF af) fⁱ = [ af ]ⁱ fⁱ
-    helper-∀ (rf⁺₁ · rf⁺₂) fⁱ = helper-∀ rf⁺₁ (helper-∀ rf⁺₂ fⁱ)
-    helper-∀ (rf⁺₁ + rf⁺₂) fⁱ = helper-∀ rf⁺₁ fⁱ ∨ⁱ helper-∀ rf⁺₂ fⁱ
-    helper-∀ (rf⁺ *) fⁱ = νⁱ helper-∀ rf⁺ (refⁱ zero) ∧ⁱ ref⁺ fⁱ
+    helper-∀ : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → RegularFormula' C → Formulaⁱ C n → Formulaⁱ C n
+    helper-∀ ε' fⁱ = fⁱ
+    helper-∀ (actF' af) fⁱ = [ af ]ⁱ fⁱ
+    helper-∀ (rf⁺₁ ·' rf⁺₂) fⁱ = helper-∀ rf⁺₁ (helper-∀ rf⁺₂ fⁱ)
+    helper-∀ (rf⁺₁ +' rf⁺₂) fⁱ = helper-∀ rf⁺₁ fⁱ ∨ⁱ helper-∀ rf⁺₂ fⁱ
+    helper-∀ (rf⁺ *') fⁱ = νⁱ helper-∀ rf⁺ (refⁱ zero) ∧ⁱ ref⁺ fⁱ
   f→fⁱ (μ x ． f) xs = μⁱ f→fⁱ f (x ∷ xs)
   f→fⁱ (ν x ． f) xs = νⁱ f→fⁱ f (x ∷ xs)
   f→fⁱ (ref x) xs with findIndexᵇ (_==_ x) xs
   ... | just i = refⁱ i
   ... | nothing = falseⁱ
 
-infix 25 _⊩_!_
+infix 25 _⊩_〔_〕
 
-_⊩_!_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → Program C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-f ⊩ x ! i = f ⊩ (x i)
-
-infix 25 _▸_⊩_!_
-
-_▸_⊩_!_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ℕ → Formula C → RecursiveProgram C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-n ▸ f ⊩ x ! i = f ⊩ (recursionHandler x n) i
+_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → Program C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
+f ⊩ x 〔 i 〕 = f ⊩ (x i)
