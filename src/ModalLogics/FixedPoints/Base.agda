@@ -1,26 +1,28 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.FixedPoints.Base where
 
-open import Common.RegularFormulas using (ActionFormula) renaming (_⊩_ to _⊩ᵃᶠ_)
 open import Common.Program using (Program)
+open import Common.RegularFormulas using (ActionFormula) renaming (_⊩_ to _⊩ᵃᶠ_)
 open import Data.Bool using (Bool; not)
 open import Data.Container using () renaming (Container to Containerˢᵗᵈ)
 open import Data.Container.FreeMonad using (_⋆_)
 open import Data.Empty.Polymorphic using (⊥)
-open import Data.Fin using (Fin; _≟_; toℕ)
-open import Data.List using (List; length; findIndexᵇ) renaming (lookup to lookup')
-open import Data.List.NonEmpty using (List⁺; [_]; _∷_; _∷⁺_; foldr; toList) renaming (length to length⁺)
+open import Data.Fin using (Fin; _≟_; _↑ˡ_; fromℕ<; inject₁)
+open import Data.List using (List; length; findIndexᵇ; lookup)
+open import Data.List.NonEmpty using (List⁺; [_]; _∷_; _∷⁺_; foldr; toList) renaming (length to length⁺; map to map⁺)
 open import Data.Maybe using (just; nothing)
-open import Data.Nat using (ℕ; _<′_; ≤′-refl)
+open import Data.Nat using (ℕ; _<′_; ≤′-refl; _+_)
 open import Data.Nat.Induction using (<′-wellFounded)
-open import Data.Product using (_×_; _,_; ∃-syntax)
+open import Data.Nat.Properties using (+-suc; m≤n⇒m≤n+o; n<1+n; +-identityʳ; +-assoc)
+open import Data.Product using (_×_; _,_; ∃-syntax; proj₂)
 open import Data.String using (String; _==_)
 open import Data.Sum using (_⊎_)
 open import Data.Unit.Polymorphic using (⊤)
+open import Data.Vec using (Vec; _++_) renaming (map to mapᵛ; lookup to lookupᵛ)
 open import Induction.WellFounded using (WellFounded; Acc)
 open import Level using (Level; 0ℓ; _⊔_)
 open import Relation.Binary using (Rel)
-open import Relation.Binary.PropositionalEquality using (_≡_; subst)
+open import Relation.Binary.PropositionalEquality using (_≡_; subst; sym)
 open import Relation.Binary.Structures using (IsDecEquivalence)
 open import Relation.Nullary using (yes; no)
 
@@ -30,67 +32,27 @@ open _⋆_
 open Fin
 open List
 open ℕ
-open _⊎_
+open Vec
 open Acc
-open _≡_
 
 private variable
   ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-data Formulaᵈⁿᶠ-var (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
-data Formulaᵈⁿᶠ-con (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
-data Formulaᵈⁿᶠ-dis (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
-
-infix 60 refᵈⁿᶠ_
-infix 55 ⟨_⟩ᵈⁿᶠ_
-infix 55 [_]ᵈⁿᶠ_
-infix 50 μᵈⁿᶠ_
-infix 50 νᵈⁿᶠ_
-
-data Formulaᵈⁿᶠ-var C where
-  trueᵈⁿᶠ falseᵈⁿᶠ : ∀ {n} → Formulaᵈⁿᶠ-var C n
-  ⟨_⟩ᵈⁿᶠ_ [_]ᵈⁿᶠ_ : ∀ {n} → ActionFormula C → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-var C n
-  μᵈⁿᶠ_ νᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-dis C (suc n) → Formulaᵈⁿᶠ-var C n
-  refᵈⁿᶠ_ : ∀ {n} → Fin n → Formulaᵈⁿᶠ-var C n
-
-infix 45 con-var_
-infixr 40 _∧ᵈⁿᶠ_
-
-data Formulaᵈⁿᶠ-con C where
-  con-var_ : ∀ {n} → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-con C n
-  _∧ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-con C n
-
-infix 35 dis-con_
-infixr 30 _∨ᵈⁿᶠ_
-
-data Formulaᵈⁿᶠ-dis C where
-  dis-con_ : ∀ {n} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-dis C n
-  _∨ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
-
 data FixedPoint : Set where
   leastFP : FixedPoint
   greatestFP : FixedPoint
-
-data Previous (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set (ℓ₁ ⊔ ℓ₂) where
-  〔_〕 : FixedPoint × Formulaᵈⁿᶠ-dis C (suc zero) → Previous C (suc zero)
-  _∷_ : ∀ {n} → FixedPoint × Formulaᵈⁿᶠ-dis C (suc n) → Previous C n → Previous C (suc n)
-
-lookup : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n₁ : ℕ} → Previous C n₁ → Fin n₁ → FixedPoint × ∃[ n₂ ] Formulaᵈⁿᶠ-dis C (suc n₂) × Previous C (suc n₂)
-lookup prev@(〔 fp , d 〕) zero = fp , zero , d , prev
-lookup {n₁ = suc n} prev@((fp , d) ∷ _) zero = fp , n , d , prev
-lookup (_ ∷ prev) (suc i) = lookup prev i
 
 data Maybe' (α : Set ℓ) : Set ℓ where
   val_ : α → Maybe' α
   done : Maybe' α
   fail : Maybe' α
 
-data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
-  res_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Result C α
-  ∃ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α) → Result C α
-  ∀ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α) → Result C α
+data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
+  res_ : Maybe' ((C ⋆ α) × Fin n) → Result C α n
+  ∃ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α n) → Result C α n
+  ∀ʳ_ : ∀ {s} → (Positionˢᵗᵈ C s → Result C α n) → Result C α n
 
-unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Result C α → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Result C α n → Maybe' ((C ⋆ α) × Fin n) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold (res v) o x = o ≡ v → x
 unfold (∃ʳ c) o x = ∃[ p ] unfold (c p) o x
 unfold (∀ʳ c) o x = ∀ p → unfold (c p) o x
@@ -104,113 +66,39 @@ xs < ys = length⁺ xs <′ length⁺ ys
     acc<′⇒acc< : {α : Set ℓ} → {xs : List⁺ α} → Acc _<′_ (length⁺ xs) → Acc _<_ xs
     acc<′⇒acc< (acc h) = acc λ hlt → acc<′⇒acc< (h hlt)
 
-unfold⁺ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → (rs : List⁺ (Result C α)) → Acc _<_ rs → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold⁺ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → (rs : List⁺ (Result C α n)) → Acc _<_ rs → Maybe' ((C ⋆ α) × Fin n) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold⁺ (r ∷ []) _ o x = unfold r o x
 unfold⁺ (r₁ ∷ r₂ ∷ rs) (acc h) o x = unfold r₁ o x × unfold⁺ (r₂ ∷ rs) (h ≤′-refl) o x
 
-record Container (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
+record Container (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
   constructor _▷_
   field
     Shape : ℕ
-    Position : Fin Shape → C ⋆ α → List⁺ (Result C α)
+    Position : Fin Shape → C ⋆ α → List⁺ (Result C α n)
 
 open Container
 
-data ModalitySequence (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : Set ℓ₁ where
-  ⟪_⟫_ ⟦_⟧_ : ActionFormula C → ModalitySequence C → ModalitySequence C
-  ε : ModalitySequence C
+extend : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Vec (FixedPoint × Container C α (suc n)) (suc n) → (Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' ((C ⋆ α) × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+extend xs w m (val (x , i)) with lookupᵛ xs i
+... | leastFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (w o)
+... | greatestFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (m o)
+extend _ _ _ done = ⊤
+extend _ _ _ fail = ⊥
 
-apply : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → ModalitySequence C → C ⋆ α → (Maybe' (C ⋆ α) → Result C α) → Result C α
-apply (⟪ _ ⟫ _) (pure _) f = f fail
-apply (⟪ af ⟫ m) (impure (s , c)) f with af ⊩ᵃᶠ s
-... | false = f fail
-... | true = ∃ʳ λ p → apply m (c p) f
-apply (⟦ _ ⟧ _) (pure _) f = f done
-apply (⟦ af ⟧ m) (impure (s , c)) f with af ⊩ᵃᶠ s
-... | false = f done
-... | true = ∀ʳ λ p → apply m (c p) f
-apply ε x f = f (val x)
+record W {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' ((C ⋆ α) × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record M {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' ((C ⋆ α) × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 
-containerize-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n₁ : ℕ} → Formulaᵈⁿᶠ-var C (suc n₁) → Previous C (suc n₁) → ModalitySequence C × Maybe' (FixedPoint × ∃[ n₂ ] Formulaᵈⁿᶠ-dis C (suc n₂) × Previous C (suc n₂))
-containerize-var trueᵈⁿᶠ _ = ε , done
-containerize-var falseᵈⁿᶠ _ = ε , fail
-containerize-var (⟨ af ⟩ᵈⁿᶠ v) prev with containerize-var v prev
-... | m , x = ⟪ af ⟫ m , x
-containerize-var ([ af ]ᵈⁿᶠ v) prev with containerize-var v prev
-... | m , x = ⟦ af ⟧ m , x
-containerize-var {n₁ = n₁} (μᵈⁿᶠ d) prev = ε , (val (leastFP , suc n₁ , d , (leastFP , d) ∷ prev))
-containerize-var {n₁ = n₁} (νᵈⁿᶠ d) prev = ε , (val (greatestFP , suc n₁ , d , (greatestFP , d) ∷ prev))
-containerize-var (refᵈⁿᶠ i) prev = ε , val lookup prev i
-
-containerize-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n₁ : ℕ} → Formulaᵈⁿᶠ-con C (suc n₁) → Previous C (suc n₁) → List⁺ (ModalitySequence C × Maybe' (FixedPoint × ∃[ n₂ ] Formulaᵈⁿᶠ-dis C (suc n₂) × Previous C (suc n₂)))
-containerize-con (con-var v) prev = [ containerize-var v prev ]
-containerize-con (v ∧ᵈⁿᶠ c) prev = containerize-var v prev ∷⁺ containerize-con c prev
-
-containerize-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n₁ : ℕ} → Formulaᵈⁿᶠ-dis C (suc n₁) → Previous C (suc n₁) → List⁺ (List⁺ (ModalitySequence C × Maybe' (FixedPoint × ∃[ n₂ ] Formulaᵈⁿᶠ-dis C (suc n₂) × Previous C (suc n₂))))
-containerize-dis (dis-con c) prev = [ containerize-con c prev ]
-containerize-dis (c ∨ᵈⁿᶠ d) prev = containerize-con c prev ∷⁺ containerize-dis d prev
-
-containerize : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → Formulaᵈⁿᶠ-dis C (suc n) → Previous C (suc n) → (α : Set ℓ₃) → Container C α
-containerize {C = C} {n = n} d prev α with containerize-dis d prev
-... | xs = container
-  where
-  container : Container C α
-  Shape container = length⁺ xs
-  Position container s i = foldr (λ (m , x) acc → position m i x ∷⁺ acc) (λ (m , x) → [ position m i x ]) (lookup' (toList xs) s)
-    where
-    position : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → ModalitySequence C → C ⋆ α → Maybe' (FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Result C α
-    position m i (val x) = apply m i λ { (val o) → res (val (o , x)) ; done → res done ; fail → res fail }
-    position m i done = apply m i λ { (val _) → res done ; done → res done ; fail → res fail }
-    position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
-
-extend : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → (Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-extend {α = α} (val (x , leastFP , _ , d , prev)) w _ = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold⁺ rs (<-wf rs) o (w o)
-extend {α = α} (val (x , greatestFP , _ , d , prev)) _ m = ∃[ s ] ∀ {o} → let rs = Position (containerize d prev α) s x in unfold⁺ rs (<-wf rs) o (m o)
-extend done _ _ = ⊤
-extend fail _ _ = ⊥
-
-record W {C : Containerˢᵗᵈ ℓ₁ ℓ₂} ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ {α : Set ℓ₃} (_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record M {C : Containerˢᵗᵈ ℓ₁ ℓ₂} ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ {α : Set ℓ₃} (_ : Maybe' ((C ⋆ α) × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis C (suc n) × Previous C (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-
-record W i where
+record W xs i where
   inductive
   constructor wᶜ
   field
-    In : extend i W M
+    In : extend xs (W xs) (M xs) i
 
-record M i where
+record M xs i where
   coinductive
   constructor mᶜ
   field
-    Ni : extend i W M
-
-infix 25 _⊩ᵛ_
-
-_⊩ᵛ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaᵈⁿᶠ-var C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-trueᵈⁿᶠ ⊩ᵛ _ = ⊤
-falseᵈⁿᶠ ⊩ᵛ _ = ⊥
-⟨ _ ⟩ᵈⁿᶠ _ ⊩ᵛ pure _ = ⊥
-⟨ af ⟩ᵈⁿᶠ v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
-... | false = ⊥
-... | true = ∃[ p ] v ⊩ᵛ c p
-[ _ ]ᵈⁿᶠ _ ⊩ᵛ pure _ = ⊤
-[ af ]ᵈⁿᶠ v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
-... | false = ⊤
-... | true = ∀ p → v ⊩ᵛ c p
-μᵈⁿᶠ d ⊩ᵛ x = W (val (x , leastFP , zero , d , 〔 leastFP , d 〕))
-νᵈⁿᶠ d ⊩ᵛ x = M (val (x , greatestFP , zero , d , 〔 greatestFP , d 〕))
-
-infix 25 _⊩ᶜ_
-
-_⊩ᶜ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaᵈⁿᶠ-con C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-con-var v ⊩ᶜ x = v ⊩ᵛ x
-v ∧ᵈⁿᶠ c ⊩ᶜ x = (v ⊩ᵛ x) × (c ⊩ᶜ x)
-
-infix 25 _⊩ᵈ_
-
-_⊩ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaᵈⁿᶠ-dis C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-dis-con c ⊩ᵈ x = c ⊩ᶜ x
-c ∨ᵈⁿᶠ d ⊩ᵈ x = (c ⊩ᶜ x) ⊎ (d ⊩ᵈ x)
+    Ni : extend xs (W xs) (M xs) i
 
 infix 60 refⁱ_
 infix 55 ¬ⁱ_
@@ -287,6 +175,36 @@ fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
   fⁱ→f' (νⁱ fⁱ) = ν' fⁱ→f' fⁱ
   fⁱ→f' (refⁱ i) = ref'〔 true 〕 i
 
+  data Formulaᵈⁿᶠ-var (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
+  data Formulaᵈⁿᶠ-con (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
+  data Formulaᵈⁿᶠ-dis (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
+
+  infix 60 refᵈⁿᶠ_
+  infix 55 ⟨_⟩ᵈⁿᶠ_
+  infix 55 [_]ᵈⁿᶠ_
+  infix 50 μᵈⁿᶠ_
+  infix 50 νᵈⁿᶠ_
+
+  data Formulaᵈⁿᶠ-var C where
+    trueᵈⁿᶠ falseᵈⁿᶠ : ∀ {n} → Formulaᵈⁿᶠ-var C n
+    ⟨_⟩ᵈⁿᶠ_ [_]ᵈⁿᶠ_ : ∀ {n} → ActionFormula C → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-var C n
+    μᵈⁿᶠ_ νᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-dis C (suc n) → Formulaᵈⁿᶠ-var C n
+    refᵈⁿᶠ_ : ∀ {n} → Fin n → Formulaᵈⁿᶠ-var C n
+
+  infix 45 con-var_
+  infixr 40 _∧ᵈⁿᶠ_
+
+  data Formulaᵈⁿᶠ-con C where
+    con-var_ : ∀ {n} → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-con C n
+    _∧ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-con C n
+
+  infix 35 dis-con_
+  infixr 30 _∨ᵈⁿᶠ_
+
+  data Formulaᵈⁿᶠ-dis C where
+    dis-con_ : ∀ {n} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-dis C n
+    _∨ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
+
   merge-dis-dis-or : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
   merge-dis-dis-or (dis-con c) d = c ∨ᵈⁿᶠ d
   merge-dis-dis-or (c ∨ᵈⁿᶠ d₁) d₂ = c ∨ᵈⁿᶠ merge-dis-dis-or d₁ d₂
@@ -337,6 +255,108 @@ fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
   f'→fᵈⁿᶠ (ref'〔 false 〕 _) = dis-con con-var falseᵈⁿᶠ
   f'→fᵈⁿᶠ (ref'〔 true 〕 i) = dis-con (con-var (refᵈⁿᶠ i))
 
+  _↑_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Container C α n → (x : ℕ) → Container C α (n + x)
+  Shape ((S ▷ _) ↑ _) = S
+  Position ((S ▷ P) ↑ n) s i with P s i
+  ... | xs = map⁺ (λ x → x ↑' n) xs
+    where
+    _↑'_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Result C α n → (x : ℕ) → Result C α (n + x)
+    (res (val (fst , snd))) ↑' x = res (val (fst , snd ↑ˡ x))
+    (res done) ↑' _ = res done
+    (res fail) ↑' _ = res fail
+    (∃ʳ c) ↑' n = ∃ʳ λ p → (c p) ↑' n
+    (∀ʳ c) ↑' n = ∀ʳ λ p → (c p) ↑' n
+
+  data ModalitySequence (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : Set ℓ₁ where
+    ⟪_⟫_ ⟦_⟧_ : ActionFormula C → ModalitySequence C → ModalitySequence C
+    ε : ModalitySequence C
+
+  apply : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ _ : IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence C → C ⋆ α → (Maybe' (C ⋆ α) → Result C α n) → Result C α n
+  apply (⟪ _ ⟫ _) (pure _) f = f fail
+  apply (⟪ af ⟫ m) (impure (s , c)) f with af ⊩ᵃᶠ s
+  ... | false = f fail
+  ... | true = ∃ʳ λ p → apply m (c p) f
+  apply (⟦ _ ⟧ _) (pure _) f = f done
+  apply (⟦ af ⟧ m) (impure (s , c)) f with af ⊩ᵃᶠ s
+  ... | false = f done
+  ... | true = ∀ʳ λ p → apply m (c p) f
+  apply ε x f = f (val x)
+
+  containerize-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → Formulaᵈⁿᶠ-var C (suc n) → (n₁ : ℕ) → Vec (Fin (suc n₁)) (suc n) → (α : Set ℓ₃) → ModalitySequence C × Maybe' (∃[ n₂ ] (Fin (suc n₁ + n₂)) × Vec (FixedPoint × Container C α (suc n₁ + n₂)) n₂)
+  containerize-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → Formulaᵈⁿᶠ-con C (suc n) → (n₁ : ℕ) → Vec (Fin (suc n₁)) (suc n) → (α : Set ℓ₃) → ∃[ n₂ ] List⁺ (ModalitySequence C × Maybe' (Fin (suc n₁ + n₂))) × Vec (FixedPoint × Container C α (suc n₁ + n₂)) n₂
+  containerize-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → Formulaᵈⁿᶠ-dis C (suc n) → (n₁ : ℕ) → Vec (Fin (suc n₁)) (suc n) → (α : Set ℓ₃) → ∃[ n₂ ] List⁺ (List⁺ (ModalitySequence C × Maybe' (Fin (suc n₁ + n₂)))) × Vec (FixedPoint × Container C α (suc n₁ + n₂)) n₂
+  containerize : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {n : ℕ} → FixedPoint → Formulaᵈⁿᶠ-dis C (suc n) → (n₁ : ℕ) → Vec (Fin n₁) n → (α : Set ℓ₃) → ∃[ n₂ ] Vec (FixedPoint × Container C α (n₁ + suc n₂)) (suc n₂)
+
+  containerize-var trueᵈⁿᶠ _ _ _ = ε , done
+  containerize-var falseᵈⁿᶠ _ _ _ = ε , fail
+  containerize-var (⟨ af ⟩ᵈⁿᶠ v) n₁ prev α with containerize-var v n₁ prev α
+  ... | m , x = ⟪ af ⟫ m , x
+  containerize-var ([ af ]ᵈⁿᶠ v) n₁ prev α with containerize-var v n₁ prev α
+  ... | m , x = ⟦ af ⟧ m , x
+  containerize-var (μᵈⁿᶠ d) n₁ prev α with containerize leastFP d (suc n₁) prev α
+  ... | n₂ , Cs = ε , val (suc n₂ , subst Fin (sym (+-suc (suc n₁) n₂)) (fromℕ< (m≤n⇒m≤n+o n₂ (n<1+n (suc n₁)))) , Cs)
+  containerize-var (νᵈⁿᶠ d) n₁ prev α with containerize greatestFP d (suc n₁) prev α
+  ... | n₂ , Cs = ε , val (suc n₂ , subst Fin (sym (+-suc (suc n₁) n₂)) (fromℕ< (m≤n⇒m≤n+o n₂ (n<1+n (suc n₁)))) , Cs)
+  containerize-var (refᵈⁿᶠ i) n₁ prev α = ε , val (zero , subst Fin (sym (+-identityʳ (suc n₁))) (lookupᵛ prev i) , [])
+
+  containerize-con (con-var v) n₁ prev α with containerize-var v n₁ prev α
+  ... | m , val (n₂ , i , Cs) = n₂ , [ m , val i ] , Cs
+  ... | m , done = zero , [ m , done ] , []
+  ... | m , fail = zero , [ m , fail ] , []
+  containerize-con (v ∧ᵈⁿᶠ c) n₁ prev α with containerize-var v n₁ prev α
+  containerize-con {C = C} (v ∧ᵈⁿᶠ c) n₁ prev α | m , val (n₂ , i , Cs₁) with containerize-con c (n₁ + n₂) (mapᵛ (λ x → x ↑ˡ n₂) prev) α
+  ... | n₃ , xs , Cs₂ = n₂ + n₃ , subst (λ n → List⁺ (ModalitySequence C × Maybe' (Fin n)) × Vec (FixedPoint × Container C α n) (n₂ + n₃)) (+-assoc (suc n₁) n₂ n₃) ((m , val (fromℕ< (m≤n⇒m≤n+o n₃ (n<1+n (n₁ + n₂))))) ∷⁺ xs , mapᵛ (λ (fp , C) → fp , (C ↑ n₃)) Cs₁ ++ Cs₂)
+  containerize-con (v ∧ᵈⁿᶠ c) n₁ prev α | m , done with containerize-con c n₁ prev α
+  ... | n₂ , xs , Cs = n₂ , (m , done) ∷⁺ xs , Cs
+  containerize-con (v ∧ᵈⁿᶠ c) n₁ prev α | m , fail with containerize-con c n₁ prev α
+  ... | n₂ , xs , Cs = n₂ , (m , fail) ∷⁺ xs , Cs
+
+  containerize-dis (dis-con c) n₁ prev α with containerize-con c n₁ prev α
+  ... | n₂ , x , Cs = n₂ , [ x ] , Cs
+  containerize-dis {C = C} (c ∨ᵈⁿᶠ d) n₁ prev α with containerize-con c n₁ prev α
+  ... | n₂ , x , Cs₁ with containerize-dis d (n₁ + n₂) (mapᵛ (λ x → x ↑ˡ n₂) prev) α
+  ...   | n₃ , xs , Cs₂ = n₂ + n₃ , subst (λ n → List⁺ (List⁺ (ModalitySequence C × Maybe' (Fin n))) × Vec (FixedPoint × Container C α n) (n₂ + n₃)) (+-assoc (suc n₁) n₂ n₃) (map⁺ (λ { (m , val x) → m , val (x ↑ˡ n₃) ; (m , done) → m , done ; (m , fail) → m , fail }) x ∷⁺ xs , mapᵛ (λ (fp , C) → fp , (C ↑ n₃)) Cs₁ ++ Cs₂)
+
+  containerize {C = C} fp d n₁ prev α with containerize-dis d n₁ (fromℕ< (n<1+n n₁) ∷ mapᵛ inject₁ prev) α
+  ... | n₂ , xs , Cs = n₂ , subst (λ n → Vec (FixedPoint × Container C α n) (suc n₂)) (sym (+-suc n₁ n₂)) ((fp , container) ∷ Cs)
+    where
+    container : Container C α (suc n₁ + n₂)
+    Shape container = length⁺ xs
+    Position container s i = foldr ((λ (m , x) acc → position m i x ∷⁺ acc)) ((λ (m , x) → [ position m i x ])) (lookup (toList xs) s)
+      where
+      position : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence C → C ⋆ α → Maybe' (Fin n) → Result C α n
+      position m i (val x) = apply m i λ { (val o) → res (val (o , x)) ; done → res done ; fail → res fail }
+      position m i done = apply m i λ { (val _) → res done ; done → res done ; fail → res fail }
+      position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
+
+  infix 25 _⊩ᵛ_
+
+  _⊩ᵛ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaᵈⁿᶠ-var C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  trueᵈⁿᶠ ⊩ᵛ _ = ⊤
+  falseᵈⁿᶠ ⊩ᵛ _ = ⊥
+  ⟨ _ ⟩ᵈⁿᶠ _ ⊩ᵛ pure _ = ⊥
+  ⟨ af ⟩ᵈⁿᶠ v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
+  ... | false = ⊥
+  ... | true = ∃[ p ] v ⊩ᵛ c p
+  [ _ ]ᵈⁿᶠ _ ⊩ᵛ pure _ = ⊤
+  [ af ]ᵈⁿᶠ v ⊩ᵛ impure (s , c) with af ⊩ᵃᶠ s
+  ... | false = ⊤
+  ... | true = ∀ p → v ⊩ᵛ c p
+  _⊩ᵛ_ {α = α} (μᵈⁿᶠ d) x = W (proj₂ (containerize leastFP d zero [] α)) (val (x , zero))
+  _⊩ᵛ_ {α = α} (νᵈⁿᶠ d) x = M (proj₂ (containerize greatestFP d zero [] α)) (val (x , zero))
+
+  infix 25 _⊩ᶜ_
+
+  _⊩ᶜ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaᵈⁿᶠ-con C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  con-var v ⊩ᶜ x = v ⊩ᵛ x
+  v ∧ᵈⁿᶠ c ⊩ᶜ x = (v ⊩ᵛ x) × (c ⊩ᶜ x)
+
+  infix 25 _⊩ᵈ_
+
+  _⊩ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {α : Set ℓ₃} → Formulaᵈⁿᶠ-dis C zero → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  dis-con c ⊩ᵈ x = c ⊩ᶜ x
+  c ∨ᵈⁿᶠ d ⊩ᵈ x = (c ⊩ᶜ x) ⊎ (d ⊩ᵈ x)
+
 infix 60 ref_
 infix 55 ¬_
 infix 50 ⟨_⟩_
@@ -361,8 +381,8 @@ _⊩_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shap
 f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   where
   f→fⁱ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → Formula C → (xs : List String) → Formulaⁱ C (length xs)
-  f→fⁱ true xs = trueⁱ
-  f→fⁱ false xs = falseⁱ
+  f→fⁱ true _ = trueⁱ
+  f→fⁱ false _ = falseⁱ
   f→fⁱ (¬ f) xs = ¬ⁱ f→fⁱ f xs
   f→fⁱ (f₁ ∧ f₂) xs = f→fⁱ f₁ xs ∧ⁱ f→fⁱ f₂ xs
   f→fⁱ (f₁ ∨ f₂) xs = f→fⁱ f₁ xs ∨ⁱ f→fⁱ f₂ xs
