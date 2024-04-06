@@ -1,8 +1,8 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.RegularFormulas.Base where
 
-open import Common.RegularFormulas using (ActionFormula; RegularFormula)
 open import Common.Program using (Program)
+open import Common.RegularFormulas using (ActionFormula; RegularFormula)
 open import Data.Bool using (true; false)
 open import Data.Container using (Container; Shape)
 open import Data.Container.FreeMonad using (_⋆_)
