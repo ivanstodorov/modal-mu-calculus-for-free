@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe #-}
 module Common.Program where
 
-open import Common.Container using (_:<:_)
+open import Common.Injectable using (_:<:_)
 open import Data.Container using (Container)
 open import Data.Container.Combinator using (_⊎_)
 open import Data.Container.FreeMonad using (_⋆_; _>>=_)
@@ -31,11 +31,11 @@ recursionEffect : (I : Set ℓ₁) → (I → Set ℓ₂) → Container ℓ₁ �
 Shape (recursionEffect I _) = RecursionOperations I
 Position (recursionEffect _ O) (call i) = O i
 
-callS : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ⦃ recursionEffect I O :<: C ⦄ → I → Shape C
-callS ⦃ inst ⦄ = (injS inst) ∘ call
+callS : {I : Set ℓ₃} → {O : I → Set ℓ₄} → (C : Container ℓ₁ ℓ₂) → ⦃ recursionEffect I O :<: C ⦄ → I → Shape C
+callS _ ⦃ inst ⦄ = (injS inst) ∘ call
 
-callF : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → ⦃ recursionEffect I O :<: C ⦄ → (i : I) → C ⋆ (O i)
-callF ⦃ inst ⦄ i = impure (callS i , pure ∘ projP inst)
+callF : {I : Set ℓ₃} → {O : I → Set ℓ₄} → {C : Container ℓ₁ ℓ₂} → ⦃ recursionEffect I O :<: C ⦄ → (i : I) → C ⋆ (O i)
+callF {C = C} ⦃ inst ⦄ i = impure (callS C i , pure ∘ projP inst)
 
 RecursiveProgram : Container ℓ₁ ℓ₂ → (I : Set ℓ₃) → (I → Set ℓ₂) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 RecursiveProgram C I O = (i : I) → (recursionEffect I O ⊎ C) ⋆ O i

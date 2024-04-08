@@ -1,5 +1,5 @@
 {-# OPTIONS --without-K --safe #-}
-module Common.Container where
+module Common.Injectable where
 
 open import Data.Container using (Container)
 open import Data.Container.Combinator using (_⊎_)
