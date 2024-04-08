@@ -2,7 +2,7 @@
 module ModalLogics.HennessyMilnerLogic.Properties where
 
 open import Common.Biconditional using (_⇔_)
-open import Common.Program using (Program)
+open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Container using (Container; Shape)
 open import Data.Container.FreeMonad using (_⋆_)
 open import Data.Empty using () renaming (⊥-elim to ⊥-elim₀)
@@ -13,7 +13,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using (tt)
 open import Function using (_∘_; const; case_of_)
 open import Level using (Level; lift)
-open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _⊩_; _⊩_〔_〕)
+open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _⊩_; _⊩_〔_〕; _▷_⊩_〔_〕)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Structures using (IsDecEquivalence)
 open import Relation.Nullary using (Dec; yes; no; _because_)
@@ -36,6 +36,12 @@ postulate
 does ⦃ ⊩-decᵖ f x i ⦄ with ⊩-dec f (x i)
 ... | does because _ = does
 proof ⦃ ⊩-decᵖ f x i ⦄ with ⊩-dec f (x i)
+... | _ because proof = proof
+
+⊩-decʳ : ⦃ _ : IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → (n : ℕ) → (f : Formula C) → (x : RecursiveProgram C I O) → (i : I) → Dec (n ▷ f ⊩ x 〔 i 〕)
+does ⦃ ⊩-decʳ n f x i ⦄ with ⊩-dec f ((recursionHandler x n) i)
+... | does because _ = does
+proof ⦃ ⊩-decʳ n f x i ⦄ with ⊩-dec f ((recursionHandler x n) i)
 ... | _ because proof = proof
 
 -- Proposition Logic

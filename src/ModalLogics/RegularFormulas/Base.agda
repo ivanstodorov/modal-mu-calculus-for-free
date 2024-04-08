@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.RegularFormulas.Base where
 
-open import Common.Program using (Program)
+open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Common.RegularFormulas using (ActionFormula; RegularFormula)
 open import Data.Bool using (true; false)
 open import Data.Container using (Container; Shape)
@@ -120,3 +120,8 @@ infix 25 _⊩_〔_〕
 
 _⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → Program C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
 f ⊩ x 〔 i 〕 = f ⊩ (x i)
+
+infix 25 _▷_⊩_〔_〕
+
+_▷_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₂} → ℕ → Formula C → RecursiveProgram C I O → I → Set (ℓ₁ ⊔ ℓ₂)
+n ▷ f ⊩ x 〔 i 〕 = f ⊩ (recursionHandler x n) i

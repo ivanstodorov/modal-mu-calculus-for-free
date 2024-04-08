@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.DataParameters.Base where
 
-open import Common.Program using (Program)
+open import Common.Program using (Program; RecursiveProgram; recursionHandler)
 open import Data.Bool using (Bool; not; T)
 open import Data.Container using () renaming (Container to Containerˢᵗᵈ)
 open import Data.Container.FreeMonad using (_⋆_)
@@ -593,3 +593,8 @@ infix 25 _⊩_〔_〕
 
 _⊩_〔_〕 : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {ℓ : Level} → {αs : List (Set ℓ ⊎ Set ℓ)} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C ℓ αs → Program C I O → I → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
 f ⊩ x 〔 i 〕 = f ⊩ x i
+
+infix 25 _▷_⊩_〔_〕
+
+_▷_⊩_〔_〕 : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shapeˢᵗᵈ C} _≡_ ⦄ → {ℓ : Level} → {αs : List (Set ℓ ⊎ Set ℓ)} → {I : Set ℓ₃} → {O : I → Set ℓ₂} → ℕ → Formula C ℓ αs → RecursiveProgram C I O → I → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂)
+n ▷ f ⊩ x 〔 i 〕 = f ⊩ (recursionHandler x n) i
