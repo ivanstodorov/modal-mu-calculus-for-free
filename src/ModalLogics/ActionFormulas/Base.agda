@@ -1,23 +1,15 @@
-{-# OPTIONS --without-K --safe #-}
+{-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.ActionFormulas.Base where
 
-open import Common.Program using (Program; RecursiveProgram; recursionHandler)
+open import Common.Program using (Program; ParameterizedProgram; free; pure; impure)
 open import Common.RegularFormulas using (ActionFormula) renaming (_⊩_ to _⊩ᵃᶠ_)
-open import Data.Bool using (true; false)
-open import Data.Container using (Container; Shape)
-open import Data.Container.FreeMonad using (_⋆_)
+open import Data.Container using (Container)
 open import Data.Empty.Polymorphic using (⊥)
-open import Data.Nat using (ℕ)
 open import Data.Product using (_×_; _,_; ∃-syntax)
 open import Data.Sum using (_⊎_)
 open import Data.Unit.Polymorphic using (⊤)
-open import Level using (Level)
-open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using () renaming (¬_ to ¬'_)
-
-open _⋆_
-open IsDecEquivalence ⦃...⦄
+open import Level using (Level; _⊔_)
+open import Relation.Nullary using () renaming (¬_ to ¬ˢᵗᵈ_)
 
 private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
@@ -37,28 +29,21 @@ data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
 
 infix 25 _⊩_
 
-_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set ℓ₂
+_⊩_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formula C → Program C α → Set (ℓ₁ ⊔ ℓ₂)
 true ⊩ _ = ⊤
 false ⊩ _ = ⊥
-¬ f ⊩ x = ¬' f ⊩ x
+¬ f ⊩ x = ¬ˢᵗᵈ f ⊩ x
 f₁ ∧ f₂ ⊩ x = f₁ ⊩ x × f₂ ⊩ x
 f₁ ∨ f₂ ⊩ x = f₁ ⊩ x ⊎ f₂ ⊩ x
 f₁ ⇒ f₂ ⊩ x = f₁ ⊩ x → f₂ ⊩ x
-⟨ _ ⟩ _ ⊩ pure _ = ⊥
-⟨ af ⟩ f ⊩ impure (s , c) with af ⊩ᵃᶠ s
-... | false = ⊥
-... | true = ∃[ p ] f ⊩ c p
-[ _ ] _ ⊩ pure _ = ⊤
-[ af ] f ⊩ impure (s , c) with af ⊩ᵃᶠ s
-... | false = ⊤
-... | true = ∀ p → f ⊩ c p
+⟨ af ⟩ f ⊩ x with free x
+... | pure _ = ⊥
+... | impure (s , c) = af ⊩ᵃᶠ s × ∃[ p ] f ⊩ c p
+[ af ] f ⊩ x with free x
+... | pure _ = ⊤
+... | impure (s , c) = af ⊩ᵃᶠ s × (∀ p → f ⊩ c p) ⊎ ¬ˢᵗᵈ af ⊩ᵃᶠ s
 
 infix 25 _⊩_〔_〕
 
-_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → Program C I O → I → Set ℓ₂
+_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → ParameterizedProgram C I O → I → Set (ℓ₁ ⊔ ℓ₂)
 f ⊩ x 〔 i 〕 = f ⊩ (x i)
-
-infix 25 _▷_⊩_〔_〕
-
-_▷_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₂} → ℕ → Formula C → RecursiveProgram C I O → I → Set ℓ₂
-n ▷ f ⊩ x 〔 i 〕 = f ⊩ (recursionHandler x n) i

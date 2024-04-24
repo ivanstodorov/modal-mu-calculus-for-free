@@ -1,50 +1,57 @@
-{-# OPTIONS --without-K --safe #-}
+{-# OPTIONS --without-K --safe --guardedness #-}
 module Common.Program where
 
-open import Common.Injectable using (_:<:_)
-open import Data.Container using (Container)
-open import Data.Container.Combinator using (_⊎_)
-open import Data.Container.FreeMonad using (_⋆_; _>>=_)
+open import Data.Container using (Container; ⟦_⟧)
 open import Data.Product using (_,_)
-open import Data.Maybe using (Maybe; maybe)
-open import Data.Nat using (ℕ)
-open import Data.Sum using (inj₁; inj₂)
-open import Function using (_∘_)
 open import Level using (Level; _⊔_)
 
-open _:<:_
-open Container
-open _⋆_
-open Maybe
-open ℕ
-
 private variable
-  ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
-Program : Container ℓ₁ ℓ₂ → (I : Set ℓ₃) → (I → Set ℓ₄) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄)
-Program C I O = (i : I) → C ⋆ O i
+data Free (F : Container ℓ₁ ℓ₂ → Set ℓ₃ → Set ℓ₄) (C : Container ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄) where
+  pure : α → Free F C α
+  impure : ⟦ C ⟧ (F C α) → Free F C α
 
-data RecursionOperations (I : Set ℓ) : Set ℓ where
-  call : I → RecursionOperations I
+module Inductive where
 
-recursionEffect : (I : Set ℓ₁) → (I → Set ℓ₂) → Container ℓ₁ ℓ₂
-Shape (recursionEffect I _) = RecursionOperations I
-Position (recursionEffect _ O) (call i) = O i
+  record IndFree (C : Container ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
+    inductive
+    constructor ⦗_⦘
+    field
+      free : Free IndFree C α
 
-callS : {I : Set ℓ₃} → {O : I → Set ℓ₄} → (C : Container ℓ₁ ℓ₂) → ⦃ recursionEffect I O :<: C ⦄ → I → Shape C
-callS _ ⦃ inst ⦄ = (injS inst) ∘ call
+  _>>=_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {β : Set ℓ₄} → IndFree C α → (α → IndFree C β) → IndFree C β
+  ⦗ pure x ⦘ >>= b = b x
+  ⦗ impure (s , c) ⦘ >>= b = ⦗ impure (s , (λ p → c p >>= b)) ⦘
 
-callF : {I : Set ℓ₃} → {O : I → Set ℓ₄} → {C : Container ℓ₁ ℓ₂} → ⦃ recursionEffect I O :<: C ⦄ → (i : I) → C ⋆ (O i)
-callF {C = C} ⦃ inst ⦄ i = impure (callS C i , pure ∘ projP inst)
+  _>>_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {β : Set ℓ₄} → IndFree C α → IndFree C β → IndFree C β
+  a >> b = a >>= λ _ → b
 
-RecursiveProgram : Container ℓ₁ ℓ₂ → (I : Set ℓ₃) → (I → Set ℓ₂) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-RecursiveProgram C I O = (i : I) → (recursionEffect I O ⊎ C) ⋆ O i
+module Coinductive where
 
-recursionHandler : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₂} → RecursiveProgram C I O → ℕ → Program C I (Maybe ∘ O)
-recursionHandler x n i = recursionHandler' x n (x i)
-  where
-  recursionHandler' : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₂} → {α : Set ℓ₄} → RecursiveProgram C I O → ℕ → (recursionEffect I O ⊎ C) ⋆ α → C ⋆ Maybe α
-  recursionHandler' _ _ (pure a) = pure (just a)
-  recursionHandler' _ zero (impure (inj₁ _ , _)) = pure nothing
-  recursionHandler' f (suc n) (impure (inj₁ (call i) , c)) = recursionHandler' f n (f i) >>= maybe (recursionHandler' f (suc n) ∘ c) (pure nothing)
-  recursionHandler' f n (impure (inj₂ s , c)) = impure (s , recursionHandler' f n ∘ c)
+  record CoFree (C : Container ℓ₁ ℓ₂) (α : Set ℓ₃) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
+    coinductive
+    constructor ⦗_⦘
+    field
+      free : Free CoFree C α
+
+  open CoFree
+
+  _>>=_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {β : Set ℓ₄} → CoFree C α → (α → CoFree C β) → CoFree C β
+  free (a >>= b) with free a
+  ... | pure x = free (b x)
+  ... | impure (s , c) = impure (s , λ p → c p >>= b)
+
+  _>>_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {β : Set ℓ₄} → CoFree C α → CoFree C β → CoFree C β
+  a >> b = a >>= λ _ → b
+
+open Coinductive using (CoFree)
+open Coinductive using (⦗_⦘; _>>=_; _>>_) public
+
+open CoFree public
+
+Program : Container ℓ₁ ℓ₂ → Set ℓ₃ → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+Program = CoFree
+
+ParameterizedProgram : Container ℓ₁ ℓ₂ → (I : Set ℓ₃) → (I → Set ℓ₄) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄)
+ParameterizedProgram C I O = (i : I) → Program C (O i)

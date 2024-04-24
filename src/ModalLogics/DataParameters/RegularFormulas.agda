@@ -6,18 +6,12 @@ open import Data.Empty.Polymorphic using (⊥)
 open import Data.Product using (_×_; ∃-syntax)
 open import Data.Sum using (_⊎_)
 open import Data.Unit.Polymorphic using (⊤)
-open import Level using (Level; suc; _⊔_)
+open import Level using (Level; suc; _⊔_; Lift)
 open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using (yes; no) renaming (¬_ to ¬ˢᵗᵈ_)
-
-open IsDecEquivalence ⦃...⦄
+open import Relation.Nullary using () renaming (¬_ to ¬ˢᵗᵈ_)
 
 private variable
   ℓ ℓ₁ ℓ₂ : Level
-
-data Inhabited (α : Set ℓ) : Set ℓ where
-  default_ : α → Inhabited α
 
 infix 125 val_
 infix 125 act_
@@ -33,17 +27,15 @@ data ActionFormula (C : Container ℓ₁ ℓ₂) (ℓ : Level) : Set ((suc ℓ) 
   act_ : Shape C → ActionFormula C ℓ
   ¬_ : ActionFormula C ℓ → ActionFormula C ℓ
   _∩_ _∪_ : ActionFormula C ℓ → ActionFormula C ℓ → ActionFormula C ℓ
-  ∀〔_〕_ ∃〔_〕_ : ∀ {α : Set ℓ} → Inhabited α → (α → ActionFormula C ℓ) → ActionFormula C ℓ
+  ∀〔_〕_ ∃〔_〕_ : (α : Set ℓ) → (α → ActionFormula C ℓ) → ActionFormula C ℓ
 
 infix 25 _⊩_
 
-_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence (_≡_ {A = Shape C}) ⦄ → ActionFormula C ℓ → Shape C → Set ℓ
+_⊩_ : {C : Container ℓ₁ ℓ₂} → ActionFormula C ℓ → Shape C → Set (ℓ ⊔ ℓ₁)
 true ⊩ _ = ⊤
 false ⊩ _ = ⊥
-val x ⊩ _ = x
-act x ⊩ s with x ≟ s
-... | no _ = ⊥
-... | yes _ = ⊤
+_⊩_ {ℓ₁ = ℓ₁} {ℓ = ℓ} (val x) _ = Lift (ℓ ⊔ ℓ₁) x
+_⊩_ {ℓ₁ = ℓ₁} {ℓ = ℓ} (act s₁) s₂ = Lift (ℓ ⊔ ℓ₁) (s₁ ≡ s₂)
 ¬ af ⊩ s = ¬ˢᵗᵈ (af ⊩ s)
 af₁ ∩ af₂ ⊩ s = (af₁ ⊩ s) × (af₂ ⊩ s)
 af₁ ∪ af₂ ⊩ s = (af₁ ⊩ s) ⊎ (af₂ ⊩ s)

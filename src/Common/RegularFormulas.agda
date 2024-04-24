@@ -1,15 +1,14 @@
 {-# OPTIONS --without-K --safe #-}
 module Common.RegularFormulas where
 
-open import Data.Bool using (Bool; not; _∧_; _∨_)
 open import Data.Container using (Container; Shape)
+open import Data.Empty.Polymorphic using (⊥)
+open import Data.Product using (_×_)
+open import Data.Sum using (_⊎_)
+open import Data.Unit.Polymorphic using (⊤)
 open import Level using (Level)
 open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary.Decidable using (⌊_⌋)
-
-open Bool
-open IsDecEquivalence ⦃...⦄
+open import Relation.Nullary using () renaming (¬_ to ¬ˢᵗᵈ_)
 
 private variable
   ℓ₁ ℓ₂ : Level
@@ -27,13 +26,13 @@ data ActionFormula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
 
 infix 25 _⊩_
 
-_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → ActionFormula C → Shape C → Bool
-true ⊩ _ = true
-false ⊩ _ = false
-act s₁ ⊩ s₂ = ⌊ s₁ ≟ s₂ ⌋
-¬ af ⊩ s = not (af ⊩ s)
-af₁ ∪ af₂ ⊩ s = af₁ ⊩ s ∨ af₂ ⊩ s
-af₁ ∩ af₂ ⊩ s = af₁ ⊩ s ∧ af₂ ⊩ s
+_⊩_ : {C : Container ℓ₁ ℓ₂} → ActionFormula C → Shape C → Set ℓ₁
+true ⊩ _ = ⊤
+false ⊩ _ = ⊥
+act s₁ ⊩ s₂ = s₁ ≡ s₂
+¬ af ⊩ s = ¬ˢᵗᵈ af ⊩ s
+af₁ ∪ af₂ ⊩ s = af₁ ⊩ s ⊎ af₂ ⊩ s
+af₁ ∩ af₂ ⊩ s = af₁ ⊩ s × af₂ ⊩ s
 
 infix 80 actF_
 infix 75 _*

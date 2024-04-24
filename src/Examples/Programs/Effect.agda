@@ -1,83 +1,71 @@
-{-# OPTIONS --without-K --safe #-}
+{-# OPTIONS --without-K --safe --guardedness #-}
 module Examples.Programs.Effect where
 
 open import Common.Injectable using (_:<:_)
+open import Common.Program using (Program; ⦗_⦘; pure; impure)
 open import Data.Bool using (Bool)
 open import Data.Container using (Container)
 open import Data.Container.Combinator using (_⊎_)
-open import Data.Container.FreeMonad using (_⋆_)
-open import Data.Empty using () renaming (⊥ to ⊥₀; ⊥-elim to ⊥₀-elim)
-open import Data.Nat using (ℕ) renaming (_≟_ to _≟ⁿ_)
-open import Data.Product using (_,_)
-open import Data.Sum using (inj₁; inj₂)
-open import Data.Unit using () renaming (⊤ to ⊤₀; tt to tt₀)
-open import Function using (case_of_; _∘_)
+open import Data.Empty using (⊥; ⊥-elim)
+open import Data.Nat using (ℕ)
+open import Data.Product using (_×_; _,_)
+open import Data.String using (String)
+open import Data.Unit using (⊤)
+open import Function using (_∘_; _∘₂_)
 open import Level using (Level; 0ℓ)
-open import Relation.Binary.PropositionalEquality using (_≡_; isDecEquivalence)
-open import Relation.Binary.Structures using (IsDecEquivalence)
-open import Relation.Nullary using (yes; no; ofʸ; ofⁿ)
 
 open _:<:_
-open Bool
 open Container
-open _⋆_
-open _≡_
-open IsDecEquivalence ⦃...⦄ hiding (refl)
 
 private variable
   ℓ₁ ℓ₂ ℓ₃ : Level
 
-data AuthOperations : Set where
-  login : ℕ → AuthOperations
-  logout : AuthOperations
+data InputShape : Set where
+  input : InputShape
+
+inputEffect : Container 0ℓ 0ℓ
+Shape inputEffect = InputShape
+Position inputEffect _ = String × ℕ
+
+inputS : (C : Container ℓ₁ ℓ₂) → ⦃ inputEffect :<: C ⦄ → Shape C
+inputS _ ⦃ inst ⦄ = injS inst input
+
+inputP : {C : Container ℓ₁ ℓ₂} → ⦃ inputEffect :<: C ⦄ → Program C (String × ℕ)
+inputP {C = C} ⦃ inst ⦄ = ⦗ impure (inputS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
+
+data AuthShape : Set where
+  login : String → ℕ → AuthShape
+  logout : AuthShape
 
 authEffect : Container 0ℓ 0ℓ
-Shape authEffect = AuthOperations
-Position authEffect (login _) = Bool
-Position authEffect logout = ⊤₀
+Shape authEffect = AuthShape
+Position authEffect (login _ _) = Bool
+Position authEffect logout = ⊤
 
-instance
-  authEffect-decEq : IsDecEquivalence {A = Shape authEffect} _≡_
-  authEffect-decEq = isDecEquivalence λ { (login n₁) (login n₂) → case n₁ ≟ⁿ n₂ of λ { (no h) → record { does = false ; proof = ofⁿ λ { refl → h refl } }
-                                                                                    ; (yes refl) → record { does = true ; proof = ofʸ refl } }
-                                        ; (login _) logout → record { does = false ; proof = ofⁿ λ () }
-                                        ; logout (login _) → record { does = false ; proof = ofⁿ λ () }
-                                        ; logout logout → record { does = true ; proof = ofʸ refl } }
+loginS : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → String → ℕ → Shape C
+loginS _ ⦃ inst ⦄ = injS inst ∘₂ login
 
-loginS : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → ℕ → Shape C
-loginS _ ⦃ inst ⦄ = injS inst ∘ login
-
-loginF : {C : Container ℓ₁ ℓ₂} → ⦃ authEffect :<: C ⦄ → ℕ → C ⋆ Bool
-loginF {C = C} ⦃ inst ⦄ n = impure (loginS C n , pure ∘ projP inst)
+loginP : {C : Container ℓ₁ ℓ₂} → ⦃ authEffect :<: C ⦄ → String → ℕ → Program C Bool
+loginP {C = C} ⦃ inst ⦄ x n = ⦗ impure (loginS C x n , λ p → ⦗ pure (projP inst p) ⦘) ⦘
 
 logoutS : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → Shape C
 logoutS _ ⦃ inst ⦄ = injS inst logout
 
-logoutF : {C : Container ℓ₁ ℓ₂} → ⦃ authEffect :<: C ⦄ → C ⋆ ⊤₀
-logoutF {C = C} ⦃ inst ⦄ = impure (logoutS C , pure ∘ projP inst)
+logoutP : {C : Container ℓ₁ ℓ₂} → ⦃ authEffect :<: C ⦄ → Program C ⊤
+logoutP {C = C} ⦃ inst ⦄ = ⦗ impure (logoutS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
+
+data ExceptionShape : Set where
+  exception : ExceptionShape
 
 exceptionEffect : Container 0ℓ 0ℓ
-Shape exceptionEffect = ⊤₀
-Position exceptionEffect _ = ⊥₀
-
-instance
-  exceptionEffect-decEq : IsDecEquivalence {A = Shape exceptionEffect} _≡_
-  exceptionEffect-decEq = isDecEquivalence λ { tt₀ tt₀ → record { does = true ; proof = ofʸ refl } }
+Shape exceptionEffect = ExceptionShape
+Position exceptionEffect _ = ⊥
 
 exceptionS : (C : Container ℓ₁ ℓ₂) → ⦃ exceptionEffect :<: C ⦄ → Shape C
-exceptionS _ ⦃ inst ⦄ = injS inst tt₀
+exceptionS _ ⦃ inst ⦄ = injS inst exception
 
-exceptionF : {C : Container ℓ₁ ℓ₂} → ⦃ exceptionEffect :<: C ⦄ → {α : Set ℓ₃} → C ⋆ α
-exceptionF {C = C} ⦃ inst ⦄ = impure (exceptionS C , ⊥₀-elim ∘ projP inst)
+exceptionP : {C : Container ℓ₁ ℓ₂} → ⦃ exceptionEffect :<: C ⦄ → {α : Set ℓ₃} → Program C α
+exceptionP {C = C} ⦃ inst ⦄ = ⦗ impure (exceptionS C , ⊥-elim ∘ projP inst) ⦘
 
 effect : Container 0ℓ 0ℓ
-effect = authEffect ⊎ exceptionEffect
-
-instance
-  effect-decEq : IsDecEquivalence {A = Shape effect} _≡_
-  effect-decEq = isDecEquivalence λ { (inj₁ x) (inj₁ y) → case x ≟ y of λ { (no h) → record { does = false ; proof = ofⁿ λ { refl → h refl } }
-                                                                          ; (yes refl) → record { does = true ; proof = ofʸ refl } }
-                                    ; (inj₁ _) (inj₂ _) → record { does = false ; proof = ofⁿ λ () }
-                                    ; (inj₂ _) (inj₁ _) → record { does = false ; proof = ofⁿ λ () }
-                                    ; (inj₂ x) (inj₂ y) → case x ≟ y of λ { (no h) → record { does = false ; proof = ofⁿ λ { refl → h refl } }
-                                                                          ; (yes refl) → record { does = true ; proof = ofʸ refl } } }
+effect = inputEffect ⊎ authEffect ⊎ exceptionEffect

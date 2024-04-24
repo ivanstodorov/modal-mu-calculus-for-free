@@ -1,12 +1,10 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.RegularFormulas.Base where
 
-open import Common.Program using (Program; RecursiveProgram; recursionHandler)
+open import Common.Program using (Program; ParameterizedProgram)
 open import Common.RegularFormulas using (ActionFormula; RegularFormula)
 open import Data.Bool using (true; false)
-open import Data.Container using (Container; Shape)
-open import Data.Container.FreeMonad using (_⋆_)
-open import Data.Empty.Polymorphic using (⊥)
+open import Data.Container using (Container)
 open import Data.Fin using (Fin; toℕ; inject₁)
 open import Data.List using (List; length; findIndexᵇ)
 open import Data.Maybe using (just; nothing)
@@ -14,8 +12,6 @@ open import Data.Nat using (ℕ; suc; _<ᵇ_)
 open import Data.String using (String; _==_)
 open import Level using (Level; _⊔_)
 open import ModalLogics.FixedPoints.Base using (Formulaⁱ; _⊩ⁱ_)
-open import Relation.Binary.PropositionalEquality using (_≡_)
-open import Relation.Binary.Structures using (IsDecEquivalence)
 
 open RegularFormula
 open Fin
@@ -45,7 +41,7 @@ data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
 
 infix 25 _⊩_
 
-_⊩_ : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {α : Set ℓ₃} → Formula C → C ⋆ α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+_⊩_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formula C → Program C α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   where
   infix 80 actF'_
@@ -118,10 +114,5 @@ f ⊩ x = f→fⁱ f [] ⊩ⁱ x
 
 infix 25 _⊩_〔_〕
 
-_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → Program C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
+_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → ParameterizedProgram C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
 f ⊩ x 〔 i 〕 = f ⊩ (x i)
-
-infix 25 _▷_⊩_〔_〕
-
-_▷_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → ⦃ IsDecEquivalence {A = Shape C} _≡_ ⦄ → {I : Set ℓ₃} → {O : I → Set ℓ₂} → ℕ → Formula C → RecursiveProgram C I O → I → Set (ℓ₁ ⊔ ℓ₂)
-n ▷ f ⊩ x 〔 i 〕 = f ⊩ (recursionHandler x n) i
