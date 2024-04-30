@@ -154,8 +154,8 @@ fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
   negate (f'₁ ∨' f'₂) = negate f'₁ ∧' negate f'₂
   negate (⟨ af ⟩' f') = [ af ]' negate f'
   negate ([ af ]' f') = ⟨ af ⟩' negate f'
-  negate (μ' f') = ν' flipRef zero f'
-  negate (ν' f') = μ' flipRef zero f'
+  negate (μ' f') = ν' flipRef zero (negate f')
+  negate (ν' f') = μ' flipRef zero (negate f')
   negate (ref'〔 b 〕 i) = ref'〔 not b 〕 i
 
   fⁱ→f' : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaⁱ C n → Formula' C n

@@ -493,6 +493,16 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
   ... | yes _ = ref''〔 not b 〕 i ． args
 
   negate : {n : ℕ} → {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → Formula'' C ℓ xs → Formula'' C ℓ xs
+
+  negate-q : {n : ℕ} → {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → {αs : List (Set ℓ ⊎ Set ℓ)} → Quantified'' C ℓ xs αs → Quantified'' C ℓ xs αs
+  negate-q (formula'' f'') = formula'' negate f''
+  negate-q (∀''〔 α 〕 q'') = ∀''〔 α 〕 λ a → negate-q (q'' a)
+  negate-q (∃''〔 α 〕 q'') = ∃''〔 α 〕 λ a → negate-q (q'' a)
+
+  negate-p : {n : ℕ} → {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → {αs : List (Set ℓ)} → Parameterized'' C ℓ xs αs → Parameterized'' C ℓ xs αs
+  negate-p (quantified'' q'') = quantified'' negate-q q''
+  negate-p (α ↦'' p'') = α ↦'' λ a → negate-p (p'' a)
+
   negate true'' = false''
   negate false'' = true''
   negate (val'' x) = val'' (¬ˢᵗᵈ x)
@@ -500,8 +510,8 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
   negate (f''₁ ∨'' f''₂) = negate f''₁ ∧'' negate f''₂
   negate (⟨ af ⟩'' f'') = [ af ]'' negate f''
   negate ([ af ]'' f'') = ⟨ af ⟩'' negate f''
-  negate (μ'' p'' ． args) = ν'' flipRef-p zero p'' ． args
-  negate (ν'' p'' ． args) = μ'' flipRef-p zero p'' ． args
+  negate (μ'' p'' ． args) = ν'' flipRef-p zero (negate-p p'') ． args
+  negate (ν'' p'' ． args) = μ'' flipRef-p zero (negate-p p'') ． args
   negate (ref''〔 b 〕 i ． args) = ref''〔 not b 〕 i ． args
 
   f'→f'' : {n : ℕ} → {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → Formula' C ℓ xs → Formula'' C ℓ xs
