@@ -3,7 +3,7 @@ module Examples.HennessyMilnerLogic where
 
 open import Common.Injectable using ()
 open import Examples.Programs.BankAccountBalance using (bankAccountBalance)
-open import Examples.Programs.Effect using (effect; inputS; loginS; logoutS)
+open import Examples.Programs.Effect using (effect; getCredentialsS; loginS; showBalanceS; logoutS)
 open import Data.Bool using (true)
 open import Data.Nat using (ℕ; zero)
 open import Data.Product using (_,_)
@@ -17,7 +17,7 @@ open import Relation.Binary.PropositionalEquality using (refl)
 open Formula
 
 property₁ : Formula effect
-property₁ = ⟨ inputS effect ⟩ true
+property₁ = ⟨ getCredentialsS effect ⟩ true
 
 test₁ : property₁ ⊩ bankAccountBalance
 test₁ = refl , ("" , zero) , tt
@@ -29,13 +29,13 @@ test₂ : (x : String) → (n : ℕ) → property₂ x n ⊩ bankAccountBalance
 test₂ x n = inj₂ (λ ()) , inj₂ λ ()
 
 property₃ : String → ℕ → Formula effect
-property₃ x n = ⟨ inputS effect ⟩ ⟨ loginS effect x n ⟩ true
+property₃ x n = ⟨ getCredentialsS effect ⟩ ⟨ loginS effect x n ⟩ true
 
 test₃ : (x : String) → (n : ℕ) → property₃ x n ⊩ bankAccountBalance
 test₃ x n = refl , (x , n) , refl , true , tt
 
 property₄ : String → ℕ → Formula effect
-property₄ x n = ⟨ inputS effect ⟩ ⟨ loginS effect x n ⟩ ⟨ logoutS effect ⟩ true
+property₄ x n = ⟨ getCredentialsS effect ⟩ ⟨ loginS effect x n ⟩ ⟨ showBalanceS effect ⟩ ⟨ logoutS effect ⟩ true
 
 test₄ : (x : String) → (n : ℕ) → property₄ x n ⊩ bankAccountBalance
-test₄ x n = refl , (x , n) , refl , true , refl , tt₀ , tt
+test₄ x n = refl , (x , n) , refl , true , refl , tt₀ , refl , tt₀ , tt

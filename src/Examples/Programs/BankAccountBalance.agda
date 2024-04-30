@@ -6,10 +6,10 @@ open import Common.Program using (Program; free; ⦗_⦘; impure)
 open import Data.Bool using (true; false)
 open import Data.Product using (_,_)
 open import Data.Unit using (⊤)
-open import Examples.Programs.Effect using (effect; inputS; loginS; logoutS; exceptionP)
+open import Examples.Programs.Effect using (effect; getCredentialsS; loginS; showBalanceS; logoutS; exceptionP)
 
 bankAccountBalance : Program effect ⊤
-free bankAccountBalance = impure (inputS effect , λ where
+free bankAccountBalance = impure (getCredentialsS effect , λ where
   (x , n) → ⦗ impure (loginS effect x n , λ where
-    true → ⦗ impure (logoutS effect , λ _ → bankAccountBalance) ⦘
+    true → ⦗ impure (showBalanceS effect , λ _ → ⦗ impure (logoutS effect , λ _ → bankAccountBalance) ⦘) ⦘
     false → exceptionP) ⦘)

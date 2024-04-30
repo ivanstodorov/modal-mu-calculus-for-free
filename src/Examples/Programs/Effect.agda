@@ -20,18 +20,26 @@ open Container
 private variable
   ℓ₁ ℓ₂ ℓ₃ : Level
 
-data InputShape : Set where
-  input : InputShape
+data IOShape : Set where
+  getCredentials : IOShape
+  showBalance : IOShape
 
-inputEffect : Container 0ℓ 0ℓ
-Shape inputEffect = InputShape
-Position inputEffect _ = String × ℕ
+IOEffect : Container 0ℓ 0ℓ
+Shape IOEffect = IOShape
+Position IOEffect getCredentials = String × ℕ
+Position IOEffect showBalance = ⊤
 
-inputS : (C : Container ℓ₁ ℓ₂) → ⦃ inputEffect :<: C ⦄ → Shape C
-inputS _ ⦃ inst ⦄ = injS inst input
+getCredentialsS : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
+getCredentialsS _ ⦃ inst ⦄ = injS inst getCredentials
 
-inputP : {C : Container ℓ₁ ℓ₂} → ⦃ inputEffect :<: C ⦄ → Program C (String × ℕ)
-inputP {C = C} ⦃ inst ⦄ = ⦗ impure (inputS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
+getCredentialsP : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C (String × ℕ)
+getCredentialsP {C = C} ⦃ inst ⦄ = ⦗ impure (getCredentialsS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
+
+showBalanceS : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
+showBalanceS _ ⦃ inst ⦄ = injS inst showBalance
+
+showBalanceP : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C ⊤
+showBalanceP {C = C} ⦃ inst ⦄ = ⦗ impure (showBalanceS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
 
 data AuthShape : Set where
   login : String → ℕ → AuthShape
@@ -68,4 +76,4 @@ exceptionP : {C : Container ℓ₁ ℓ₂} → ⦃ exceptionEffect :<: C ⦄ →
 exceptionP {C = C} ⦃ inst ⦄ = ⦗ impure (exceptionS C , ⊥-elim ∘ projP inst) ⦘
 
 effect : Container 0ℓ 0ℓ
-effect = inputEffect ⊎ authEffect ⊎ exceptionEffect
+effect = IOEffect ⊎ authEffect ⊎ exceptionEffect
