@@ -8,10 +8,9 @@ open import Data.Container using (Container)
 open import Data.Container.Combinator using (_⊎_)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Nat using (ℕ)
-open import Data.Product using (_×_; _,_)
-open import Data.String using (String)
+open import Data.Product using (_,_)
 open import Data.Unit using (⊤)
-open import Function using (_∘_; _∘₂_)
+open import Function using (_∘_)
 open import Level using (Level; 0ℓ)
 
 open _:<:_
@@ -20,60 +19,65 @@ open Container
 private variable
   ℓ₁ ℓ₂ ℓ₃ : Level
 
+data EffectShape : Set where
+  getPIN : EffectShape
+  verifyPIN : ℕ → EffectShape
+  showBalance : EffectShape
+  throwException : EffectShape
+
+effect : Container 0ℓ 0ℓ
+Shape effect = EffectShape
+Position effect getPIN = ℕ
+Position effect (verifyPIN _) = Bool
+Position effect showBalance = ⊤
+Position effect throwException = ⊥
+
 data IOShape : Set where
-  getCredentials : IOShape
+  getPIN : IOShape
   showBalance : IOShape
 
 IOEffect : Container 0ℓ 0ℓ
 Shape IOEffect = IOShape
-Position IOEffect getCredentials = String × ℕ
+Position IOEffect getPIN = ℕ
 Position IOEffect showBalance = ⊤
 
-getCredentialsS : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
-getCredentialsS _ ⦃ inst ⦄ = injS inst getCredentials
+getPINˢ : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
+getPINˢ _ ⦃ inst ⦄ = injS inst getPIN
 
-getCredentialsP : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C (String × ℕ)
-getCredentialsP {C = C} ⦃ inst ⦄ = ⦗ impure (getCredentialsS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
+getPINᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C ℕ
+getPINᵖ {C = C} ⦃ inst ⦄ = ⦗ impure (getPINˢ C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
 
-showBalanceS : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
-showBalanceS _ ⦃ inst ⦄ = injS inst showBalance
+showBalanceˢ : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
+showBalanceˢ _ ⦃ inst ⦄ = injS inst showBalance
 
-showBalanceP : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C ⊤
-showBalanceP {C = C} ⦃ inst ⦄ = ⦗ impure (showBalanceS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
+showBalanceᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C ⊤
+showBalanceᵖ {C = C} ⦃ inst ⦄ = ⦗ impure (showBalanceˢ C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
 
-data AuthShape : Set where
-  login : String → ℕ → AuthShape
-  logout : AuthShape
+data VerificationShape : Set where
+  verifyPIN : ℕ → VerificationShape
 
-authEffect : Container 0ℓ 0ℓ
-Shape authEffect = AuthShape
-Position authEffect (login _ _) = Bool
-Position authEffect logout = ⊤
+verificationEffect : Container 0ℓ 0ℓ
+Shape verificationEffect = VerificationShape
+Position verificationEffect (verifyPIN _) = Bool
 
-loginS : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → String → ℕ → Shape C
-loginS _ ⦃ inst ⦄ = injS inst ∘₂ login
+verifyPINˢ : (C : Container ℓ₁ ℓ₂) → ⦃ verificationEffect :<: C ⦄ → ℕ → Shape C
+verifyPINˢ _ ⦃ inst ⦄ = injS inst ∘ verifyPIN
 
-loginP : {C : Container ℓ₁ ℓ₂} → ⦃ authEffect :<: C ⦄ → String → ℕ → Program C Bool
-loginP {C = C} ⦃ inst ⦄ x n = ⦗ impure (loginS C x n , λ p → ⦗ pure (projP inst p) ⦘) ⦘
-
-logoutS : (C : Container ℓ₁ ℓ₂) → ⦃ authEffect :<: C ⦄ → Shape C
-logoutS _ ⦃ inst ⦄ = injS inst logout
-
-logoutP : {C : Container ℓ₁ ℓ₂} → ⦃ authEffect :<: C ⦄ → Program C ⊤
-logoutP {C = C} ⦃ inst ⦄ = ⦗ impure (logoutS C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
+verifyPINᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ verificationEffect :<: C ⦄ → ℕ → Program C Bool
+verifyPINᵖ {C = C} ⦃ inst ⦄ n = ⦗ impure (verifyPINˢ C n , λ p → ⦗ pure (projP inst p) ⦘) ⦘
 
 data ExceptionShape : Set where
-  exception : ExceptionShape
+  throwException : ExceptionShape
 
 exceptionEffect : Container 0ℓ 0ℓ
 Shape exceptionEffect = ExceptionShape
 Position exceptionEffect _ = ⊥
 
-exceptionS : (C : Container ℓ₁ ℓ₂) → ⦃ exceptionEffect :<: C ⦄ → Shape C
-exceptionS _ ⦃ inst ⦄ = injS inst exception
+throwExceptionˢ : (C : Container ℓ₁ ℓ₂) → ⦃ exceptionEffect :<: C ⦄ → Shape C
+throwExceptionˢ _ ⦃ inst ⦄ = injS inst throwException
 
-exceptionP : {C : Container ℓ₁ ℓ₂} → ⦃ exceptionEffect :<: C ⦄ → {α : Set ℓ₃} → Program C α
-exceptionP {C = C} ⦃ inst ⦄ = ⦗ impure (exceptionS C , ⊥-elim ∘ projP inst) ⦘
+throwExceptionᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ exceptionEffect :<: C ⦄ → {α : Set ℓ₃} → Program C α
+throwExceptionᵖ {C = C} ⦃ inst ⦄ = ⦗ impure (throwExceptionˢ C , ⊥-elim ∘ projP inst) ⦘
 
-effect : Container 0ℓ 0ℓ
-effect = IOEffect ⊎ authEffect ⊎ exceptionEffect
+effect⁺ : Container 0ℓ 0ℓ
+effect⁺ = IOEffect ⊎ verificationEffect ⊎ exceptionEffect

@@ -2,41 +2,42 @@
 module Examples.DataParameters where
 
 open import Common.Injectable using ()
+open import Data.Bool using (Bool; T; not)
+open import Data.Fin using (zero)
 open import Data.List using ([]; _∷_)
 open import Data.Nat using (ℕ) renaming (_≟_ to _≟ⁿ_)
-open import Data.String using (String) renaming (_≟_ to _≟ˢ_)
-open import Data.Product using (_×_; _,_)
-open import Data.Sum using (_⊎_)
-open import Examples.Programs.BankAccountBalance using (bankAccountBalance)
-open import Examples.Programs.Effect using (effect; getCredentialsS; loginS)
+open import Data.Product using (_,_)
+open import Data.Sum using (inj₁; inj₂)
+open import Data.Unit.Polymorphic using (tt)
+open import Examples.Programs.ATM+ using (ATM⁺)
+open import Examples.Programs.Effect using (effect⁺; getPINˢ; verifyPINˢ; showBalanceˢ)
 open import Level using (0ℓ; lift)
-open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifiedⁱ; _⊩_)
+open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifiedⁱ; Parameterizedⁱ; M; mᶜ; []; _∷_; _⊩_)
 open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; RegularFormula)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Relation.Nullary using (no; yes)
 
-open _⊎_
+open Bool
 open Formulaⁱ
 open Quantifiedⁱ
-open ActionFormula renaming (∀〔_〕_ to ∀ᵃᶠ〔_〕_; val_ to valᵃᶠ_)
+open Parameterizedⁱ
+open M
+open ActionFormula renaming (¬_ to ¬ᵃᶠ_; val_ to valᵃᶠ_; ∀〔_〕_ to ∀ᵃᶠ〔_〕_)
 open RegularFormula
 
-property₁ : String → ℕ → Formula effect 0ℓ (inj₁ String ∷ inj₁ ℕ ∷ [])
-property₁ x n = ∀〔 String 〕 λ y → ∀〔 ℕ 〕 λ m → formula val (y ≢ x ⊎ m ≢ n) ⇒ ⟨ actF act getCredentialsS effect ⟩ [ actF act loginS effect x n ] false
+property₁ : Formula effect⁺ 0ℓ []
+property₁ = formula ν Bool ↦ (λ b → quantified formula [ actF ¬ᵃᶠ (act getPINˢ effect⁺ ∪ act showBalanceˢ effect⁺) ] ref zero ． (b ∷ []) ∧ [ actF act getPINˢ effect⁺ ] (val T (not b) ∧ ref zero ． (true ∷ [])) ∧ [ actF act showBalanceˢ effect⁺ ] (val T b ∧ ref zero ． (false ∷ []))) ． (false ∷ [])
 
-test₁ : (x : String) → (n : ℕ) → property₁ x n ⊩ bankAccountBalance
-test₁ x n y m with x ≟ˢ y | n ≟ⁿ m
-... | yes refl | yes refl = inj₁ (lift λ { (inj₁ h) → h refl
-                                         ; (inj₂ h) → h refl })
-... | no h | _ = inj₂ (lift refl , (y , m) , inj₂ λ { (lift refl) → h refl })
-... | _ | no h = inj₂ (lift refl , (y , m) , inj₂ λ { (lift refl) → h refl })
+test₁ : property₁ ⊩ ATM⁺
+Ni test₁ = zero , inj₂ (λ h → h (inj₁ (lift refl))) , inj₁ (lift refl , λ { _ refl → mᶜ tt }) , inj₁ (lift refl , λ { _ refl → mᶜ (zero , inj₁ ((λ { (inj₁ ())
+                                                                                                                                                   ; (inj₂ ()) }) , λ { false refl → mᶜ (zero , inj₁ ((λ { (inj₁ ())
+                                                                                                                                                                                                         ; (inj₂ ()) }) , λ ()) , (inj₂ λ ()) , (inj₂ λ ()) , (inj₂ λ ()) , inj₂ λ ())
+                                                                                                                                                                      ; true refl → mᶜ (zero , inj₂ (λ h → h (inj₂ (lift refl))) , (inj₂ λ ()) , (inj₂ λ ()) , (inj₁ (lift refl , λ { _ refl → mᶜ tt })) , inj₁ (lift refl , λ { _ refl → test₁ })) }) , (inj₂ λ ()) , (inj₂ λ ()) , (inj₂ λ ()) , inj₂ λ ()) }) , (inj₂ λ ()) , inj₂ λ ()
 
-property₂ : String → ℕ → Formula effect 0ℓ (inj₁ (String × ℕ) ∷ [])
-property₂ x n = ∀〔 String × ℕ 〕 λ { (y , m) → formula val (y ≢ x ⊎ m ≢ n) ⇒ ⟨ actF act getCredentialsS effect ⟩ [ actF act loginS effect x n ] false }
+property₂ : ℕ → Formula effect⁺ 0ℓ (inj₁ ℕ ∷ [])
+property₂ n = ∀〔 ℕ 〕 λ m → formula val (m ≢ n) ⇒ ⟨ actF act getPINˢ effect⁺ ⟩ [ actF act verifyPINˢ effect⁺ n ] false
 
-test₂ : (x : String) → (n : ℕ) → property₂ x n ⊩ bankAccountBalance
-test₂ x n (y , m) with x ≟ˢ y | n ≟ⁿ m
-... | yes refl | yes refl = inj₁ (lift λ { (inj₁ h) → h refl
-                                         ; (inj₂ h) → h refl })
-... | no h | _ = inj₂ (lift refl , (y , m) , inj₂ λ { (lift refl) → h refl })
-... | _ | no h = inj₂ (lift refl , (y , m) , inj₂ λ { (lift refl) → h refl })
+test₂ : (n : ℕ) → property₂ n ⊩ ATM⁺
+test₂ n m with m ≟ⁿ n
+... | no h = inj₂ (lift refl , m , inj₂ λ { (lift refl) → h refl })
+... | yes refl = inj₁ (lift λ h → h refl)

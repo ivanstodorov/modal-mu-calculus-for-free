@@ -2,12 +2,11 @@
 module Examples.HennessyMilnerLogic where
 
 open import Common.Injectable using ()
-open import Examples.Programs.BankAccountBalance using (bankAccountBalance)
-open import Examples.Programs.Effect using (effect; getCredentialsS; loginS; showBalanceS; logoutS)
+open import Examples.Programs.ATM+ using (ATM⁺)
+open import Examples.Programs.Effect using (effect⁺; getPINˢ; verifyPINˢ; showBalanceˢ; throwExceptionˢ)
 open import Data.Bool using (true)
 open import Data.Nat using (ℕ; zero)
 open import Data.Product using (_,_)
-open import Data.String using (String)
 open import Data.Sum using (inj₂)
 open import Data.Unit using () renaming (tt to tt₀)
 open import Data.Unit.Polymorphic using (tt)
@@ -16,26 +15,26 @@ open import Relation.Binary.PropositionalEquality using (refl)
 
 open Formula
 
-property₁ : Formula effect
-property₁ = ⟨ getCredentialsS effect ⟩ true
+property₁ : Formula effect⁺
+property₁ = ⟨ getPINˢ effect⁺ ⟩ true
 
-test₁ : property₁ ⊩ bankAccountBalance
-test₁ = refl , ("" , zero) , tt
+test₁ : property₁ ⊩ ATM⁺
+test₁ = refl , zero , tt
 
-property₂ : String → ℕ → Formula effect
-property₂ x n = [ loginS effect x n ] false ∧ [ logoutS effect ] false
+property₂ : ℕ → Formula effect⁺
+property₂ n = [ showBalanceˢ effect⁺ ] false
 
-test₂ : (x : String) → (n : ℕ) → property₂ x n ⊩ bankAccountBalance
-test₂ x n = inj₂ (λ ()) , inj₂ λ ()
+test₂ : (n : ℕ) → property₂ n ⊩ ATM⁺
+test₂ n = inj₂ λ ()
 
-property₃ : String → ℕ → Formula effect
-property₃ x n = ⟨ getCredentialsS effect ⟩ ⟨ loginS effect x n ⟩ true
+property₃ : ℕ → Formula effect⁺
+property₃ n = [ verifyPINˢ effect⁺ n ] false ∧ [ showBalanceˢ effect⁺ ] false ∧ [ throwExceptionˢ effect⁺ ] false
 
-test₃ : (x : String) → (n : ℕ) → property₃ x n ⊩ bankAccountBalance
-test₃ x n = refl , (x , n) , refl , true , tt
+test₃ : (n : ℕ) → property₃ n ⊩ ATM⁺
+test₃ n = inj₂ (λ ()) , inj₂ (λ ()) , inj₂ λ () 
 
-property₄ : String → ℕ → Formula effect
-property₄ x n = ⟨ getCredentialsS effect ⟩ ⟨ loginS effect x n ⟩ ⟨ showBalanceS effect ⟩ ⟨ logoutS effect ⟩ true
+property₄ : ℕ → Formula effect⁺
+property₄ n = ⟨ getPINˢ effect⁺ ⟩ ⟨ verifyPINˢ effect⁺ n ⟩ ⟨ showBalanceˢ effect⁺ ⟩ true
 
-test₄ : (x : String) → (n : ℕ) → property₄ x n ⊩ bankAccountBalance
-test₄ x n = refl , (x , n) , refl , true , refl , tt₀ , refl , tt₀ , tt
+test₄ : (n : ℕ) → property₄ n ⊩ ATM⁺
+test₄ n = refl , n , refl , true , refl , tt₀ , tt
