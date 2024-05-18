@@ -2,7 +2,7 @@
 module ModalLogics.FixedPoints.Base where
 
 open import Common.Program using (Program; ParameterizedProgram; free; pure; impure)
-open import Common.RegularFormulas using (ActionFormula) renaming (_⊩_ to _⊩ᵃᶠ_)
+open import Common.RegularFormulas using (ActionFormula; _∈_)
 open import Data.Bool using (Bool; not)
 open import Data.Container using () renaming (Container to Containerˢᵗᵈ; Position to Positionˢᵗᵈ)
 open import Data.Empty.Polymorphic using (⊥)
@@ -22,7 +22,7 @@ open import Induction.WellFounded using (WellFounded; Acc)
 open import Level using (Level; 0ℓ; _⊔_)
 open import Relation.Binary using (Rel)
 open import Relation.Binary.PropositionalEquality using (_≡_; subst; sym)
-open import Relation.Nullary using (yes; no) renaming (¬_ to ¬ˢᵗᵈ_)
+open import Relation.Nullary using (¬_; yes; no)
 
 open Bool
 open Fin
@@ -50,8 +50,8 @@ data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : 
 
 unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Result C α n → Maybe' (Program C α × Fin n) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold (res v) o x = o ≡ v → x
-unfold (_×∃_ {s = s} af c) o x = af ⊩ᵃᶠ s × ∃[ p ] unfold (c p) o x
-unfold (_×∀_ {s = s} af c) o x = af ⊩ᵃᶠ s × (∀ p → unfold (c p) o x) ⊎ ¬ˢᵗᵈ af ⊩ᵃᶠ s
+unfold (_×∃_ {s = s} af c) o x = s ∈ af × ∃[ p ] unfold (c p) o x
+unfold (_×∀_ {s = s} af c) o x = s ∈ af → ∀ p → unfold (c p) o x
 
 _<_ : {α : Set ℓ} → Rel (List⁺ α) 0ℓ
 xs < ys = length⁺ xs <′ length⁺ ys
@@ -97,7 +97,7 @@ record M xs i where
     Ni : extend xs (W xs) (M xs) i
 
 infix 60 refⁱ_
-infix 55 ¬ⁱ_
+infix 55 ~ⁱ_
 infix 50 ⟨_⟩ⁱ_
 infix 50 [_]ⁱ_
 infixr 45 _∧ⁱ_
@@ -108,16 +108,16 @@ infix 30 νⁱ_
 
 data Formulaⁱ (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁ where
   trueⁱ falseⁱ : ∀ {n} → Formulaⁱ C n
-  ¬ⁱ_ : ∀ {n} → Formulaⁱ C n → Formulaⁱ C n
+  ~ⁱ_ : ∀ {n} → Formulaⁱ C n → Formulaⁱ C n
   _∧ⁱ_ _∨ⁱ_ _⇒ⁱ_ : ∀ {n} → Formulaⁱ C n → Formulaⁱ C n → Formulaⁱ C n
   ⟨_⟩ⁱ_ [_]ⁱ_ : ∀ {n} → ActionFormula C → Formulaⁱ C n → Formulaⁱ C n
   μⁱ_ νⁱ_ : ∀ {n} → Formulaⁱ C (suc n) → Formulaⁱ C n
   refⁱ_ : ∀ {n} → Fin n → Formulaⁱ C n
 
-infix 25 _⊩ⁱ_
+infix 25 _⊨ⁱ_
 
-_⊩ⁱ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formulaⁱ C zero → Program C α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
+_⊨ⁱ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaⁱ C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   where
   infix 60 ref'〔_〕_
   infix 50 ⟨_⟩'_
@@ -161,7 +161,7 @@ fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
   fⁱ→f' : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaⁱ C n → Formula' C n
   fⁱ→f' trueⁱ = true'
   fⁱ→f' falseⁱ = false'
-  fⁱ→f' (¬ⁱ fⁱ) = negate (fⁱ→f' fⁱ)
+  fⁱ→f' (~ⁱ fⁱ) = negate (fⁱ→f' fⁱ)
   fⁱ→f' (fⁱ₁ ∧ⁱ fⁱ₂) = fⁱ→f' fⁱ₁ ∧' fⁱ→f' fⁱ₂
   fⁱ→f' (fⁱ₁ ∨ⁱ fⁱ₂) = fⁱ→f' fⁱ₁ ∨' fⁱ→f' fⁱ₂
   fⁱ→f' (fⁱ₁ ⇒ⁱ fⁱ₂) = negate (fⁱ→f' fⁱ₁) ∨' fⁱ→f' fⁱ₂
@@ -323,34 +323,34 @@ fⁱ ⊩ⁱ x = f'→fᵈⁿᶠ (fⁱ→f' fⁱ) ⊩ᵈ x
       position m i done = apply m i λ { (val _) → res done ; done → res done ; fail → res fail }
       position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
 
-  infix 25 _⊩ᵛ_
+  infix 25 _⊨ᵛ_
 
-  _⊩ᵛ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formulaᵈⁿᶠ-var C zero → Program C α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-  trueᵈⁿᶠ ⊩ᵛ _ = ⊤
-  falseᵈⁿᶠ ⊩ᵛ _ = ⊥
-  ⟨ af ⟩ᵈⁿᶠ v ⊩ᵛ x with free x
+  _⊨ᵛ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-var C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  _ ⊨ᵛ trueᵈⁿᶠ = ⊤
+  _ ⊨ᵛ falseᵈⁿᶠ = ⊥
+  x ⊨ᵛ ⟨ af ⟩ᵈⁿᶠ v with free x
   ... | pure _ = ⊥
-  ... | impure (s , c) = af ⊩ᵃᶠ s × ∃[ p ] v ⊩ᵛ c p
-  [ af ]ᵈⁿᶠ v ⊩ᵛ x with free x
+  ... | impure (s , c) = s ∈ af × ∃[ p ] c p ⊨ᵛ v
+  x ⊨ᵛ [ af ]ᵈⁿᶠ v with free x
   ... | pure _ = ⊤
-  ... | impure (s , c) = af ⊩ᵃᶠ s × (∀ p → v ⊩ᵛ c p) ⊎ ¬ˢᵗᵈ af ⊩ᵃᶠ s
-  _⊩ᵛ_ {α = α} (μᵈⁿᶠ d) x = W (proj₂ (containerize leastFP d zero [] α)) (val (x , zero))
-  _⊩ᵛ_ {α = α} (νᵈⁿᶠ d) x = M (proj₂ (containerize greatestFP d zero [] α)) (val (x , zero))
+  ... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ᵛ v
+  _⊨ᵛ_ {α = α} x (μᵈⁿᶠ d) = W (proj₂ (containerize leastFP d zero [] α)) (val (x , zero))
+  _⊨ᵛ_ {α = α} x (νᵈⁿᶠ d) = M (proj₂ (containerize greatestFP d zero [] α)) (val (x , zero))
 
-  infix 25 _⊩ᶜ_
+  infix 25 _⊨ᶜ_
 
-  _⊩ᶜ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formulaᵈⁿᶠ-con C zero → Program C α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-  con-var v ⊩ᶜ x = v ⊩ᵛ x
-  v ∧ᵈⁿᶠ c ⊩ᶜ x = (v ⊩ᵛ x) × (c ⊩ᶜ x)
+  _⊨ᶜ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-con C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  x ⊨ᶜ con-var v = x ⊨ᵛ v
+  x ⊨ᶜ v ∧ᵈⁿᶠ c = x ⊨ᵛ v × x ⊨ᶜ c
 
-  infix 25 _⊩ᵈ_
+  infix 25 _⊨ᵈ_
 
-  _⊩ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formulaᵈⁿᶠ-dis C zero → Program C α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-  dis-con c ⊩ᵈ x = c ⊩ᶜ x
-  c ∨ᵈⁿᶠ d ⊩ᵈ x = (c ⊩ᶜ x) ⊎ (d ⊩ᵈ x)
+  _⊨ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-dis C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  x ⊨ᵈ dis-con c = x ⊨ᶜ c
+  x ⊨ᵈ c ∨ᵈⁿᶠ d = x ⊨ᶜ c ⊎ x ⊨ᵈ d
 
 infix 60 ref_
-infix 55 ¬_
+infix 55 ~_
 infix 50 ⟨_⟩_
 infix 50 [_]_
 infixr 45 _∧_
@@ -361,21 +361,21 @@ infix 30 ν_．_
 
 data Formula (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C
-  ¬_ : Formula C → Formula C
+  ~_ : Formula C → Formula C
   _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
   ⟨_⟩_ [_]_ : ActionFormula C → Formula C → Formula C
   μ_．_ ν_．_ : String → Formula C → Formula C
   ref_ : String → Formula C
 
-infix 25 _⊩_
+infix 25 _⊨_
 
-_⊩_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formula C → Program C α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-f ⊩ x = f→fⁱ f [] ⊩ⁱ x
+_⊨_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formula C → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+x ⊨ f = x ⊨ⁱ f→fⁱ f []
   where
   f→fⁱ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → Formula C → (xs : List String) → Formulaⁱ C (length xs)
   f→fⁱ true _ = trueⁱ
   f→fⁱ false _ = falseⁱ
-  f→fⁱ (¬ f) xs = ¬ⁱ f→fⁱ f xs
+  f→fⁱ (~ f) xs = ~ⁱ f→fⁱ f xs
   f→fⁱ (f₁ ∧ f₂) xs = f→fⁱ f₁ xs ∧ⁱ f→fⁱ f₂ xs
   f→fⁱ (f₁ ∨ f₂) xs = f→fⁱ f₁ xs ∨ⁱ f→fⁱ f₂ xs
   f→fⁱ (f₁ ⇒ f₂) xs = f→fⁱ f₁ xs ⇒ⁱ f→fⁱ f₂ xs
@@ -387,7 +387,7 @@ f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   ... | just i = refⁱ i
   ... | nothing = falseⁱ
 
-infix 25 _⊩_〔_〕
+infix 25 _▷_⊨_
 
-_⊩_〔_〕 : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → ParameterizedProgram C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-f ⊩ x 〔 i 〕 = f ⊩ x i
+_▷_⊨_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → ParameterizedProgram C I O → Formula C → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
+i ▷ x ⊨ f = x i ⊨ f

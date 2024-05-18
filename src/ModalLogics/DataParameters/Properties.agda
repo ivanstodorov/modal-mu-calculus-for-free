@@ -6,7 +6,7 @@ open import Data.Container using (Container)
 open import Data.List using (List)
 open import Data.Sum using (_⊎_)
 open import Level using (Level)
-open import ModalLogics.DataParameters.Base using (Formula; _⊩_; _⊩_〔_〕)
+open import ModalLogics.DataParameters.Base using (Formula; _⊨_; _▷_⊨_)
 open import Relation.Nullary using (Dec; _because_)
 
 open Dec ⦃...⦄
@@ -18,10 +18,10 @@ private variable
   αs : List (Set ℓ ⊎ Set ℓ)
 
 postulate
-  ⊩-dec : (f : Formula C ℓ αs) → (x : Program C α) → Dec (f ⊩ x)
+  ⊨-dec : (x : Program C α) → (f : Formula C ℓ αs) → Dec (x ⊨ f)
 
-⊩-decᵖ : {I : Set ℓ₃} → {O : I → Set ℓ₄} → (f : Formula C ℓ αs) → (x : ParameterizedProgram C I O) → (i : I) → Dec (f ⊩ x 〔 i 〕)
-does ⦃ ⊩-decᵖ f x i ⦄ with ⊩-dec f (x i)
+⊨-decᵖ : {I : Set ℓ₃} → {O : I → Set ℓ₄} → (i : I) → (x : ParameterizedProgram C I O) → (f : Formula C ℓ αs) → Dec (i ▷ x ⊨ f)
+does ⦃ ⊨-decᵖ i x f ⦄ with ⊨-dec (x i) f
 ... | does because _ = does
-proof ⦃ ⊩-decᵖ f x i ⦄ with ⊩-dec f (x i)
+proof ⦃ ⊨-decᵖ i x f ⦄ with ⊨-dec (x i) f
 ... | _ because proof = proof

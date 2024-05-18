@@ -19,10 +19,10 @@ open import Data.Vec using (Vec; _++_) renaming (length to lengthᵛ; [_] to [_]
 open import Function using (case_of_)
 open import Induction.WellFounded using (WellFounded; Acc)
 open import Level using (Level; 0ℓ; _⊔_; Lift) renaming (suc to sucˡ)
-open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; RegularFormula) renaming (_⊩_ to _⊩ᵃᶠ_)
+open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; RegularFormula; _∈_)
 open import Relation.Binary using (Rel)
 open import Relation.Binary.PropositionalEquality using (_≡_; inspect; subst; sym) renaming ([_] to [_]⁼)
-open import Relation.Nullary using (yes; no) renaming (¬_ to ¬ˢᵗᵈ_)
+open import Relation.Nullary using (¬_; yes; no)
 
 open Bool
 open Fin
@@ -114,8 +114,8 @@ data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (X : Set ℓ₃) (ℓ : Level)
 
 unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {X : Set ℓ₃} → {ℓ : Level} → Result C X ℓ → Maybe' (Set ℓ ⊎ (Program C X) × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} C ℓ (αs ∷ xs) αs × Previous C ℓ (αs ∷ xs) × Arguments ℓ αs)) → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold (res v) o x = o ≡ v → x
-unfold (_×∃_ {s = s} af c) o x = af ⊩ᵃᶠ s × ∃[ p ] unfold (c p) o x
-unfold (_×∀_ {s = s} af c) o x = af ⊩ᵃᶠ s × (∀ p → unfold (c p) o x) ⊎ ¬ˢᵗᵈ af ⊩ᵃᶠ s
+unfold (_×∃_ {s = s} af c) o x = s ∈ af × ∃[ p ] unfold (c p) o x
+unfold (_×∀_ {s = s} af c) o x = s ∈ af → ∀ p → unfold (c p) o x
 
 _<_ : {X : Set ℓ} → Rel (List⁺ X) 0ℓ
 xs < ys = length⁺ xs <′ length⁺ ys
@@ -216,32 +216,32 @@ record M i where
   field
     Ni : extend i W M
 
-infix 25 _⊩ᵛ_
+infix 25 _⊨ᵛ_
 
-_⊩ᵛ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {X : Set ℓ₃} → Formulaᵈⁿᶠ-var C ℓ [] → Program C X → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-trueᵈⁿᶠ ⊩ᵛ _ = ⊤
-falseᵈⁿᶠ ⊩ᵛ _ = ⊥
-_⊩ᵛ_ {ℓ₁ = ℓ₁} {ℓ₂ = ℓ₂} {ℓ₃ = ℓ₃} {ℓ = ℓ} (valᵈⁿᶠ x) _ = Lift ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) x
-⟨ af ⟩ᵈⁿᶠ v ⊩ᵛ x with free x
+_⊨ᵛ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {X : Set ℓ₃} → Program C X → Formulaᵈⁿᶠ-var C ℓ [] → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+_ ⊨ᵛ trueᵈⁿᶠ = ⊤
+_ ⊨ᵛ falseᵈⁿᶠ = ⊥
+_⊨ᵛ_ {ℓ₁ = ℓ₁} {ℓ₂ = ℓ₂} {ℓ₃ = ℓ₃} {ℓ = ℓ} _ (valᵈⁿᶠ x) = Lift ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) x
+x ⊨ᵛ ⟨ af ⟩ᵈⁿᶠ v with free x
 ... | pure _ = ⊥
-... | impure (s , c) = af ⊩ᵃᶠ s × ∃[ p ] v ⊩ᵛ c p
-[ af ]ᵈⁿᶠ v ⊩ᵛ x with free x
+... | impure (s , c) = s ∈ af × ∃[ p ] c p ⊨ᵛ v
+x ⊨ᵛ [ af ]ᵈⁿᶠ v with free x
 ... | pure _ = ⊤
-... | impure (s , c) = af ⊩ᵃᶠ s × (∀ p → v ⊩ᵛ c p) ⊎ ¬ˢᵗᵈ af ⊩ᵃᶠ s
-μᵈⁿᶠ_．_ {αs = αs} p args ⊩ᵛ x = W (val inj₂ (x , leastFP , zero , [] , αs , p , 〔 leastFP , p 〕 , args))
-νᵈⁿᶠ_．_ {αs = αs} p args ⊩ᵛ x = M (val inj₂ (x , greatestFP , zero , [] , αs , p , 〔 greatestFP , p 〕 , args))
+... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ᵛ v
+x ⊨ᵛ μᵈⁿᶠ_．_ {αs = αs} p args = W (val inj₂ (x , leastFP , zero , [] , αs , p , 〔 leastFP , p 〕 , args))
+x ⊨ᵛ νᵈⁿᶠ_．_ {αs = αs} p args = M (val inj₂ (x , greatestFP , zero , [] , αs , p , 〔 greatestFP , p 〕 , args))
 
-infix 25 _⊩ᶜ_
+infix 25 _⊨ᶜ_
 
-_⊩ᶜ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {X : Set ℓ₃} → Formulaᵈⁿᶠ-con C ℓ [] → Program C X → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-con-var v ⊩ᶜ x = v ⊩ᵛ x
-v ∧ᵈⁿᶠ c ⊩ᶜ x = (v ⊩ᵛ x) × (c ⊩ᶜ x)
+_⊨ᶜ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {X : Set ℓ₃} → Program C X → Formulaᵈⁿᶠ-con C ℓ [] → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+x ⊨ᶜ con-var v = x ⊨ᵛ v
+x ⊨ᶜ v ∧ᵈⁿᶠ c = x ⊨ᵛ v × x ⊨ᶜ c
 
-infix 25 _⊩ᵈ_
+infix 25 _⊨ᵈ_
 
-_⊩ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {X : Set ℓ₃} → Formulaᵈⁿᶠ-dis C ℓ [] → Program C X → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-dis-con c ⊩ᵈ x = c ⊩ᶜ x
-c ∨ᵈⁿᶠ d ⊩ᵈ x = (c ⊩ᶜ x) ⊎ (d ⊩ᵈ x)
+_⊨ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {X : Set ℓ₃} → Program C X → Formulaᵈⁿᶠ-dis C ℓ [] → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+x ⊨ᵈ dis-con c = x ⊨ᶜ c
+x ⊨ᵈ c ∨ᵈⁿᶠ d = x ⊨ᶜ c ⊎ x ⊨ᵈ d
 
 data Formulaⁱ {n : ℕ} (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (ℓ : Level) : Vec (List (Set ℓ)) n → Set ((sucˡ ℓ) ⊔ ℓ₁)
 
@@ -263,7 +263,7 @@ data Parameterizedⁱ {n : ℕ} (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (ℓ : Lev
 
 infix 80 val_
 infix 80 ref_．_
-infix 75 ¬_
+infix 75 ~_
 infix 70 ⟨_⟩_
 infix 70 [_]_
 infixr 65 _∧_
@@ -275,7 +275,7 @@ infix 50 ν_．_
 data Formulaⁱ C ℓ where
   true false : ∀ {xs} → Formulaⁱ C ℓ xs
   val_ : ∀ {xs} → Set ℓ → Formulaⁱ C ℓ xs
-  ¬_ : ∀ {xs} → Formulaⁱ C ℓ xs → Formulaⁱ C ℓ xs
+  ~_ : ∀ {xs} → Formulaⁱ C ℓ xs → Formulaⁱ C ℓ xs
   _∧_ _∨_ _⇒_ : ∀ {xs} → Formulaⁱ C ℓ xs → Formulaⁱ C ℓ xs → Formulaⁱ C ℓ xs
   ⟨_⟩_ [_]_ : ∀ {xs} → RegularFormula C ℓ → Formulaⁱ C ℓ xs → Formulaⁱ C ℓ xs
   μ_．_ ν_．_ : ∀ {αs xs} → Parameterizedⁱ C ℓ (αs ∷ xs) αs → Arguments ℓ αs → Formulaⁱ C ℓ xs
@@ -284,12 +284,12 @@ data Formulaⁱ C ℓ where
 Formula : (C : Containerˢᵗᵈ ℓ₁ ℓ₂) → (ℓ : Level) → (αs : List (Set ℓ ⊎ Set ℓ)) → Set ((sucˡ ℓ) ⊔ ℓ₁)
 Formula C ℓ αs = Quantifiedⁱ C ℓ [] αs
 
-infix 25 _⊩_
+infix 25 _⊨_
 
-_⊩_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {αs : List (Set ℓ ⊎ Set ℓ)} → {X : Set ℓ₃} → Formula C ℓ αs → Program C X → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-∀〔 _ 〕 qⁱ ⊩ x = ∀ a → qⁱ a ⊩ x
-∃〔 _ 〕 qⁱ ⊩ x = ∃[ a ] qⁱ a ⊩ x
-formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
+_⊨_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {αs : List (Set ℓ ⊎ Set ℓ)} → {X : Set ℓ₃} → Program C X → Formula C ℓ αs → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+x ⊨ ∀〔 _ 〕 qⁱ = ∀ a → x ⊨ qⁱ a
+x ⊨ ∃〔 _ 〕 qⁱ = ∃[ a ] x ⊨ qⁱ a
+x ⊨ formula fⁱ = x ⊨ᵈ f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ))
   where
   infix 100 actF'_
   infix 95 _*'
@@ -333,7 +333,7 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
 
   infix 80 val'_
   infix 80 ref'_．_
-  infix 75 ¬'_
+  infix 75 ~'_
   infix 70 ⟨_⟩'_
   infix 70 [_]'_
   infixr 65 _∧'_
@@ -345,7 +345,7 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
   data Formula' C ℓ where
     true' false' : ∀ {xs} → Formula' C ℓ xs
     val'_ : ∀ {xs} → Set ℓ → Formula' C ℓ xs
-    ¬'_ : ∀ {xs} → Formula' C ℓ xs → Formula' C ℓ xs
+    ~'_ : ∀ {xs} → Formula' C ℓ xs → Formula' C ℓ xs
     _∧'_ _∨'_ _⇒'_ : ∀ {xs} → Formula' C ℓ xs → Formula' C ℓ xs → Formula' C ℓ xs
     ⟨_⟩'_ [_]'_ : ∀ {xs} → ActionFormula C ℓ → Formula' C ℓ xs → Formula' C ℓ xs
     μ'_．_ ν'_．_ : ∀ {αs xs} → Parameterized' C ℓ (αs ∷ xs) αs → Arguments ℓ αs → Formula' C ℓ xs
@@ -368,7 +368,7 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
     ref⁺' true' = true'
     ref⁺' false' = false'
     ref⁺' (val' x) = val' x
-    ref⁺' (¬' f') = ¬' ref⁺' f'
+    ref⁺' (~' f') = ~' ref⁺' f'
     ref⁺' (f'₁ ∧' f'₂) = ref⁺' f'₁ ∧' ref⁺' f'₂
     ref⁺' (f'₁ ∨' f'₂) = ref⁺' f'₁ ∨' ref⁺' f'₂
     ref⁺' (f'₁ ⇒' f'₂) = ref⁺' f'₁ ⇒' ref⁺' f'₂
@@ -409,7 +409,7 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
   fⁱ→f' true = true'
   fⁱ→f' false = false'
   fⁱ→f' (val x) = val' x
-  fⁱ→f' (¬ fⁱ) = ¬' fⁱ→f' fⁱ
+  fⁱ→f' (~ fⁱ) = ~' fⁱ→f' fⁱ
   fⁱ→f' (fⁱ₁ ∧ fⁱ₂) = fⁱ→f' fⁱ₁ ∧' fⁱ→f' fⁱ₂
   fⁱ→f' (fⁱ₁ ∨ fⁱ₂) = fⁱ→f' fⁱ₁ ∨' fⁱ→f' fⁱ₂
   fⁱ→f' (fⁱ₁ ⇒ fⁱ₂) = fⁱ→f' fⁱ₁ ⇒' fⁱ→f' fⁱ₂
@@ -505,7 +505,7 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
 
   negate true'' = false''
   negate false'' = true''
-  negate (val'' x) = val'' (¬ˢᵗᵈ x)
+  negate (val'' x) = val'' (¬ x)
   negate (f''₁ ∧'' f''₂) = negate f''₁ ∨'' negate f''₂
   negate (f''₁ ∨'' f''₂) = negate f''₁ ∧'' negate f''₂
   negate (⟨ af ⟩'' f'') = [ af ]'' negate f''
@@ -528,7 +528,7 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
   f'→f'' true' = true''
   f'→f'' false' = false''
   f'→f'' (val' x) = val'' x
-  f'→f'' (¬' f') = negate (f'→f'' f')
+  f'→f'' (~' f') = negate (f'→f'' f')
   f'→f'' (f'₁ ∧' f'₂) = f'→f'' f'₁ ∧'' f'→f'' f'₂
   f'→f'' (f'₁ ∨' f'₂) = f'→f'' f'₁ ∨'' f'→f'' f'₂
   f'→f'' (f'₁ ⇒' f'₂) = negate (f'→f'' f'₁) ∨'' f'→f'' f'₂
@@ -599,7 +599,7 @@ formula fⁱ ⊩ x = f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ)) ⊩ᵈ x
   f''→fᵈⁿᶠ (ref''〔 false 〕 i ． args) = dis-con con-var falseᵈⁿᶠ
   f''→fᵈⁿᶠ (ref''〔 true 〕 i ． args) = dis-con con-var refᵈⁿᶠ i ． args
 
-infix 25 _⊩_〔_〕
+infix 25 _▷_⊨_
 
-_⊩_〔_〕 : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {αs : List (Set ℓ ⊎ Set ℓ)} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C ℓ αs → ParameterizedProgram C I O → I → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-f ⊩ x 〔 i 〕 = f ⊩ x i
+_▷_⊨_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {αs : List (Set ℓ ⊎ Set ℓ)} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → ParameterizedProgram C I O → Formula C ℓ αs → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
+i ▷ x ⊨ f = x i ⊨ f

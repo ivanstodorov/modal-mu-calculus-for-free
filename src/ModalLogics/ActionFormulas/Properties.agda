@@ -4,7 +4,7 @@ module ModalLogics.ActionFormulas.Properties where
 open import Common.Program using (Program; ParameterizedProgram)
 open import Data.Container using (Container)
 open import Level using (Level)
-open import ModalLogics.ActionFormulas.Base using (Formula; _⊩_; _⊩_〔_〕)
+open import ModalLogics.ActionFormulas.Base using (Formula; _⊨_; _▷_⊨_)
 open import Relation.Nullary using (Dec; _because_)
 
 open Dec ⦃...⦄
@@ -15,10 +15,10 @@ private variable
   α : Set ℓ₃
 
 postulate
-  ⊩-dec : (f : Formula C) → (x : Program C α) → Dec (f ⊩ x)
+  ⊨-dec : (x : Program C α) → (f : Formula C) → Dec (x ⊨ f)
 
-⊩-decᵖ : {I : Set ℓ₃} → {O : I → Set ℓ₄} → (f : Formula C) → (x : ParameterizedProgram C I O) → (i : I) → Dec (f ⊩ x 〔 i 〕)
-does ⦃ ⊩-decᵖ f x i ⦄ with ⊩-dec f (x i)
+⊨-decᵖ : {I : Set ℓ₃} → {O : I → Set ℓ₄} → (i : I) → (x : ParameterizedProgram C I O) → (f : Formula C) → Dec (i ▷ x ⊨ f)
+does ⦃ ⊨-decᵖ i x f ⦄ with ⊨-dec (x i) f
 ... | does because _ = does
-proof ⦃ ⊩-decᵖ f x i ⦄ with ⊩-dec f (x i)
+proof ⦃ ⊨-decᵖ i x f ⦄ with ⊨-dec (x i) f
 ... | _ because proof = proof

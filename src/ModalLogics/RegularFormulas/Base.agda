@@ -11,7 +11,7 @@ open import Data.Maybe using (just; nothing)
 open import Data.Nat using (ℕ; suc; _<ᵇ_)
 open import Data.String using (String; _==_)
 open import Level using (Level; _⊔_)
-open import ModalLogics.FixedPoints.Base using (Formulaⁱ; _⊩ⁱ_)
+open import ModalLogics.FixedPoints.Base using (Formulaⁱ; _⊨ⁱ_)
 
 open RegularFormula
 open Fin
@@ -22,7 +22,7 @@ private variable
   ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
 infix 60 ref_
-infix 55 ¬_
+infix 55 ~_
 infix 50 ⟨_⟩_
 infix 50 [_]_
 infixr 45 _∧_
@@ -33,16 +33,16 @@ infix 30 ν_．_
 
 data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
   true false : Formula C
-  ¬_ : Formula C → Formula C
+  ~_ : Formula C → Formula C
   _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
   ⟨_⟩_ [_]_ : RegularFormula C → Formula C → Formula C
   μ_．_ ν_．_ : String → Formula C → Formula C
   ref_ : String → Formula C
 
-infix 25 _⊩_
+infix 25 _⊨_
 
-_⊩_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Formula C → Program C α → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-f ⊩ x = f→fⁱ f [] ⊩ⁱ x
+_⊨_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formula C → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+x ⊨ f = x ⊨ⁱ f→fⁱ f []
   where
   infix 80 actF'_
   infix 75 _*'
@@ -71,7 +71,7 @@ f ⊩ x = f→fⁱ f [] ⊩ⁱ x
     ref⁺' : {C : Container ℓ₁ ℓ₂} → {n : ℕ} → Formulaⁱ C n → Fin (suc n) → Formulaⁱ C (suc n)
     ref⁺' trueⁱ _ = trueⁱ
     ref⁺' falseⁱ _ = falseⁱ
-    ref⁺' (¬ⁱ fⁱ) x = ¬ⁱ ref⁺' fⁱ x
+    ref⁺' (~ⁱ fⁱ) x = ~ⁱ ref⁺' fⁱ x
     ref⁺' (fⁱ₁ ∧ⁱ fⁱ₂) x = ref⁺' fⁱ₁ x ∧ⁱ ref⁺' fⁱ₂ x
     ref⁺' (fⁱ₁ ∨ⁱ fⁱ₂) x = ref⁺' fⁱ₁ x ∨ⁱ ref⁺' fⁱ₂ x
     ref⁺' (fⁱ₁ ⇒ⁱ fⁱ₂) x = ref⁺' fⁱ₁ x ⇒ⁱ ref⁺' fⁱ₂ x
@@ -86,7 +86,7 @@ f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   f→fⁱ : {C : Container ℓ₁ ℓ₂} → Formula C → (xs : List String) → Formulaⁱ C (length xs)
   f→fⁱ true _ = trueⁱ
   f→fⁱ false _ = falseⁱ
-  f→fⁱ (¬ f) xs = ¬ⁱ f→fⁱ f xs
+  f→fⁱ (~ f) xs = ~ⁱ f→fⁱ f xs
   f→fⁱ (f₁ ∧ f₂) xs = f→fⁱ f₁ xs ∧ⁱ f→fⁱ f₂ xs
   f→fⁱ (f₁ ∨ f₂) xs = f→fⁱ f₁ xs ∨ⁱ f→fⁱ f₂ xs
   f→fⁱ (f₁ ⇒ f₂) xs = f→fⁱ f₁ xs ⇒ⁱ f→fⁱ f₂ xs
@@ -112,7 +112,7 @@ f ⊩ x = f→fⁱ f [] ⊩ⁱ x
   ... | just i = refⁱ i
   ... | nothing = falseⁱ
 
-infix 25 _⊩_〔_〕
+infix 25 _▷_⊨_
 
-_⊩_〔_〕 : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → Formula C → ParameterizedProgram C I O → I → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-f ⊩ x 〔 i 〕 = f ⊩ (x i)
+_▷_⊨_ : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → ParameterizedProgram C I O → Formula C → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
+i ▷ x ⊨ f = x i ⊨ f

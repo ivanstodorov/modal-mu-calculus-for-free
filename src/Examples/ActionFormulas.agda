@@ -3,17 +3,18 @@ module Examples.ActionFormulas where
 
 open import Common.Injectable using ()
 open import Common.RegularFormulas using (ActionFormula)
+open import Data.Empty using () renaming (⊥-elim to ⊥₀-elim)
 open import Data.Sum using (inj₂)
 open import Examples.Programs.ATMs using (ATMˢ)
 open import Examples.Programs.Effect using (effect⁺; getPINˢ)
-open import ModalLogics.ActionFormulas.Base using (Formula; _⊩_)
+open import ModalLogics.ActionFormulas.Base using (Formula; _⊨_)
 open import Relation.Binary.PropositionalEquality using (refl)
 
-open ActionFormula renaming (¬_ to ¬ᵃᶠ_)
+open ActionFormula
 open Formula
 
 property : Formula effect⁺
-property = [ ¬ᵃᶠ act getPINˢ effect⁺ ] false
+property = [ act getPINˢ effect⁺ ᶜ ] false
 
-test : property ⊩ ATMˢ
-test = inj₂ λ h → h refl
+proof : ATMˢ ⊨ property
+proof h = ⊥₀-elim (h refl)
