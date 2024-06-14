@@ -53,5 +53,5 @@ open CoFree public
 Program : Container ℓ₁ ℓ₂ → Set ℓ₃ → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 Program = CoFree
 
-ParameterizedProgram : Container ℓ₁ ℓ₂ → (I : Set ℓ₃) → (I → Set ℓ₄) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄)
-ParameterizedProgram C I O = (i : I) → Program C (O i)
+Programᵖ : Container ℓ₁ ℓ₂ → (I : Set ℓ₃) → (I → Set ℓ₄) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄)
+Programᵖ C I O = (i : I) → Program C (O i)
