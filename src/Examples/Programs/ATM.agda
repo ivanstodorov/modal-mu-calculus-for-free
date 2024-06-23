@@ -14,4 +14,4 @@ ATM : Program effect ⊤
 free ATM = impure (getPIN , λ where
   n → ⦗ impure (verifyPIN n , λ where
     true → ⦗ impure (showBalance , λ _ → ATM) ⦘
-    false → ⦗ impure (throwException , λ p → ⊥-elim p) ⦘) ⦘)
+    false → ⦗ impure (throwException , ⊥-elim) ⦘) ⦘)

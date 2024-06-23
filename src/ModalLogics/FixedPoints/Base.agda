@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.FixedPoints.Base where
 
-open import Common.Program using (Program; ParameterizedProgram; free; pure; impure)
+open import Common.Program using (Program; free; pure; impure)
 open import Common.RegularFormulas using (ActionFormula; _∈_)
 open import Data.Bool using (Bool; not)
 open import Data.Container using () renaming (Container to Containerˢᵗᵈ; Position to Positionˢᵗᵈ)
@@ -32,7 +32,7 @@ open Vec
 open Acc
 
 private variable
-  ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  ℓ ℓ₁ ℓ₂ ℓ₃ : Level
 
 data FixedPoint : Set where
   leastFP : FixedPoint
@@ -386,8 +386,3 @@ x ⊨ f = x ⊨ⁱ f→fⁱ f []
   f→fⁱ (ref x) xs with findIndexᵇ (_==_ x) xs
   ... | just i = refⁱ i
   ... | nothing = falseⁱ
-
-infix 25 _▷_⊨_
-
-_▷_⊨_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → ParameterizedProgram C I O → Formula C → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-i ▷ x ⊨ f = x i ⊨ f

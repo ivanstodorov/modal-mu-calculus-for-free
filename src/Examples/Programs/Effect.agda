@@ -44,14 +44,8 @@ Position IOEffect showBalance = ⊤
 getPINˢ : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
 getPINˢ _ ⦃ inst ⦄ = injS inst getPIN
 
-getPINᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C ℕ
-getPINᵖ {C = C} ⦃ inst ⦄ = ⦗ impure (getPINˢ C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
-
 showBalanceˢ : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Shape C
 showBalanceˢ _ ⦃ inst ⦄ = injS inst showBalance
-
-showBalanceᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ IOEffect :<: C ⦄ → Program C ⊤
-showBalanceᵖ {C = C} ⦃ inst ⦄ = ⦗ impure (showBalanceˢ C , λ p → ⦗ pure (projP inst p) ⦘) ⦘
 
 data VerificationShape : Set where
   verifyPIN : ℕ → VerificationShape
@@ -63,9 +57,6 @@ Position verificationEffect (verifyPIN _) = Bool
 verifyPINˢ : (C : Container ℓ₁ ℓ₂) → ⦃ verificationEffect :<: C ⦄ → ℕ → Shape C
 verifyPINˢ _ ⦃ inst ⦄ = injS inst ∘ verifyPIN
 
-verifyPINᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ verificationEffect :<: C ⦄ → ℕ → Program C Bool
-verifyPINᵖ {C = C} ⦃ inst ⦄ n = ⦗ impure (verifyPINˢ C n , λ p → ⦗ pure (projP inst p) ⦘) ⦘
-
 data ExceptionShape : Set where
   throwException : ExceptionShape
 
@@ -75,9 +66,6 @@ Position exceptionEffect _ = ⊥
 
 throwExceptionˢ : (C : Container ℓ₁ ℓ₂) → ⦃ exceptionEffect :<: C ⦄ → Shape C
 throwExceptionˢ _ ⦃ inst ⦄ = injS inst throwException
-
-throwExceptionᵖ : {C : Container ℓ₁ ℓ₂} → ⦃ exceptionEffect :<: C ⦄ → {α : Set ℓ₃} → Program C α
-throwExceptionᵖ {C = C} ⦃ inst ⦄ = ⦗ impure (throwExceptionˢ C , ⊥-elim ∘ projP inst) ⦘
 
 effect⁺ : Container 0ℓ 0ℓ
 effect⁺ = IOEffect ⊎ verificationEffect ⊎ exceptionEffect

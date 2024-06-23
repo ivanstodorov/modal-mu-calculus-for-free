@@ -2,7 +2,7 @@
 module ModalLogics.HennessyMilnerLogic.Properties where
 
 open import Common.Biconditional using (_⇔_)
-open import Common.Program using (Program; ParameterizedProgram; free; pure; impure)
+open import Common.Program using (Program; free; pure; impure)
 open import Data.Container using (Container; Shape)
 open import Data.Empty using () renaming (⊥-elim to ⊥₀-elim)
 open import Data.Empty.Polymorphic using (⊥-elim)
@@ -11,26 +11,19 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using (tt)
 open import Function using (case_of_)
 open import Level using (Level)
-open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _⊨_; _▷_⊨_)
+open import ModalLogics.HennessyMilnerLogic.Base using (Formula; _⊨_)
 open import Relation.Binary.PropositionalEquality using (refl)
-open import Relation.Nullary using (Dec; _because_; no; yes; contradiction)
+open import Relation.Nullary using (Dec; no; yes; contradiction)
 
 open Formula
-open Dec ⦃...⦄
 
 private variable
-  ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  ℓ₁ ℓ₂ ℓ₃ : Level
   C : Container ℓ₁ ℓ₂
   α : Set ℓ₃
 
 postulate
   ⊨-dec : (x : Program C α) → (f : Formula C) → Dec (x ⊨ f)
-
-⊨-decᵖ : {I : Set ℓ₃} → {O : I → Set ℓ₄} → (i : I) → (x : ParameterizedProgram C I O) → (f : Formula C) → Dec (i ▷ x ⊨ f)
-does ⦃ ⊨-decᵖ i x f ⦄ with ⊨-dec (x i) f
-... | does because _ = does
-proof ⦃ ⊨-decᵖ i x f ⦄ with ⊨-dec (x i) f
-... | _ because proof = proof
 
 -- Proposition Logic
 
@@ -280,7 +273,7 @@ f₁⇒f₂⇔~f₁∨f₂ f₁ f₂ x = forward f₁ f₂ x , backward f₁ f�
 ~|[s]f|⇔⟨s⟩~f s f x = forward s f x , backward s f x
   where
   forward : (s : Shape C) → (f : Formula C) → (x : Program C α) → x ⊨ ~ ([ s ] f) → x ⊨ ⟨ s ⟩ ~ f
-  forward s₁ f x h¬∀ with ⊨-dec x (⟨ s₁ ⟩ ~ f)
+  forward s f x h¬∀ with ⊨-dec x (⟨ s ⟩ ~ f)
   ... | yes h∃ = h∃
   ... | no h¬∃ with free x
   ...   | pure _ = ⊥₀-elim (h¬∀ tt)
@@ -315,9 +308,9 @@ f₁⇒f₂⇔~f₁∨f₂ f₁ f₂ x = forward f₁ f₂ x , backward f₁ f�
   ... | impure _ = λ { refl p → h∀₁ refl p , h∀₂ refl p }
 
 [s]|f₁∨f₂|→⟨s⟩f₁∨[s]f₂ : (s : Shape C) → (f₁ f₂ : Formula C) → (x : Program C α) → x ⊨ [ s ] (f₁ ∨ f₂) → x ⊨ ⟨ s ⟩ f₁ ∨ [ s ] f₂
-[s]|f₁∨f₂|→⟨s⟩f₁∨[s]f₂ s₁ f₁ f₂ x h with ⊨-dec x (⟨ s₁ ⟩ f₁)
+[s]|f₁∨f₂|→⟨s⟩f₁∨[s]f₂ s f₁ f₂ x h with ⊨-dec x (⟨ s ⟩ f₁)
 ... | yes h∃ = inj₁ h∃
-... | no h¬∃ with ⊨-dec x ([ s₁ ] f₂)
+... | no h¬∃ with ⊨-dec x ([ s ] f₂)
 ...   | yes h∀ = inj₂ h∀
 ...   | no h¬∀ with free x
 ...     | pure _ = inj₂ tt

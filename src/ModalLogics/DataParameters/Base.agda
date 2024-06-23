@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.DataParameters.Base where
 
-open import Common.Program using (Program; Programᵖ; free; pure; impure)
+open import Common.Program using (Program; free; pure; impure)
 open import Data.Bool using (Bool; not; T)
 open import Data.Container using () renaming (Container to Containerˢᵗᵈ; Position to Positionˢᵗᵈ)
 open import Data.Empty.Polymorphic using (⊥)
@@ -35,7 +35,7 @@ open RegularFormula
 open _≡_
 
 private variable
-  ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  ℓ ℓ₁ ℓ₂ ℓ₃ : Level
 
 data Arguments (ℓ : Level) : List (Set ℓ) → Set (sucˡ ℓ) where
   [] : Arguments ℓ []
@@ -598,8 +598,3 @@ x ⊨ formula fⁱ = x ⊨ᵈ f''→fᵈⁿᶠ (f'→f'' (fⁱ→f' fⁱ))
   f''→fᵈⁿᶠ (ν'' p'' ． args) = dis-con con-var νᵈⁿᶠ p''→pᵈⁿᶠ p'' ． args
   f''→fᵈⁿᶠ (ref''〔 false 〕 i ． args) = dis-con con-var falseᵈⁿᶠ
   f''→fᵈⁿᶠ (ref''〔 true 〕 i ． args) = dis-con con-var refᵈⁿᶠ i ． args
-
-infix 25 _▷_⊨_
-
-_▷_⊨_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {ℓ : Level} → {αs : List (Set ℓ ⊎ Set ℓ)} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → Programᵖ C I O → Formula C ℓ αs → Set ((sucˡ ℓ) ⊔ ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-i ▷ x ⊨ f = x i ⊨ f

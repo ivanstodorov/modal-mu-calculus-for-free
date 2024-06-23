@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.ActionFormulas.Base where
 
-open import Common.Program using (Program; ParameterizedProgram; free; pure; impure)
+open import Common.Program using (Program; free; pure; impure)
 open import Common.RegularFormulas using (ActionFormula; _∈_)
 open import Data.Container using (Container)
 open import Data.Empty.Polymorphic using (⊥)
@@ -12,7 +12,7 @@ open import Level using (Level; _⊔_)
 open import Relation.Nullary using (¬_)
 
 private variable
-  ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  ℓ₁ ℓ₂ ℓ₃ : Level
 
 infix 50 ~_
 infix 45 ⟨_⟩_
@@ -42,8 +42,3 @@ x ⊨ ⟨ af ⟩ f with free x
 x ⊨ [ af ] f with free x
 ... | pure _ = ⊤
 ... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ f
-
-infix 25 _▷_⊨_
-
-_▷_⊨_ : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → ParameterizedProgram C I O → Formula C → Set (ℓ₁ ⊔ ℓ₂)
-i ▷ x ⊨ f = x i ⊨ f

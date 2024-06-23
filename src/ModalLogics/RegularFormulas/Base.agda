@@ -1,7 +1,7 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.RegularFormulas.Base where
 
-open import Common.Program using (Program; ParameterizedProgram)
+open import Common.Program using (Program)
 open import Common.RegularFormulas using (ActionFormula; RegularFormula)
 open import Data.Bool using (true; false)
 open import Data.Container using (Container)
@@ -19,7 +19,7 @@ open List
 open Formulaⁱ
 
 private variable
-  ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  ℓ₁ ℓ₂ ℓ₃ : Level
 
 infix 60 ref_
 infix 55 ~_
@@ -111,8 +111,3 @@ x ⊨ f = x ⊨ⁱ f→fⁱ f []
   f→fⁱ (ref x) xs with findIndexᵇ (_==_ x) xs
   ... | just i = refⁱ i
   ... | nothing = falseⁱ
-
-infix 25 _▷_⊨_
-
-_▷_⊨_ : {C : Container ℓ₁ ℓ₂} → {I : Set ℓ₃} → {O : I → Set ℓ₄} → I → ParameterizedProgram C I O → Formula C → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₄)
-i ▷ x ⊨ f = x i ⊨ f
