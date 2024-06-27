@@ -3,7 +3,7 @@ module Examples.HennessyMilnerLogic where
 
 open import Common.Injectable using ()
 open import Examples.Programs.ATMs using (ATMˢ)
-open import Examples.Programs.Effect using (effect⁺; getPINˢ; verifyPINˢ; showBalanceˢ; throwExceptionˢ)
+open import Examples.Programs.Effect using (effect⁺; getPINˢ; correctPINˢ; showBalanceˢ; throwExceptionˢ)
 open import Data.Bool using (true)
 open import Data.Nat using (ℕ; zero)
 open import Data.Product using (_,_)
@@ -28,13 +28,13 @@ proof₂ : ATMˢ ⊨ property₂
 proof₂ ()
 
 property₃ : ℕ → Formula effect⁺
-property₃ n = [ verifyPINˢ effect⁺ n ] false ∧ [ showBalanceˢ effect⁺ ] false ∧ [ throwExceptionˢ effect⁺ ] false
+property₃ n = [ correctPINˢ effect⁺ n ] false ∧ [ showBalanceˢ effect⁺ ] false ∧ [ throwExceptionˢ effect⁺ ] false
 
 proof₃ : (n : ℕ) → ATMˢ ⊨ property₃ n
-proof₃ n = (λ ()) , (λ ()) , λ ()
+proof₃ _ = (λ ()) , (λ ()) , λ ()
 
 property₄ : ℕ → Formula effect⁺
-property₄ n = ⟨ getPINˢ effect⁺ ⟩ ⟨ verifyPINˢ effect⁺ n ⟩ ⟨ showBalanceˢ effect⁺ ⟩ true
+property₄ n = ⟨ getPINˢ effect⁺ ⟩ ⟨ correctPINˢ effect⁺ n ⟩ ⟨ showBalanceˢ effect⁺ ⟩ true
 
 proof₄ : (n : ℕ) → ATMˢ ⊨ property₄ n
 proof₄ n = refl , n , refl , true , refl , tt₀ , tt

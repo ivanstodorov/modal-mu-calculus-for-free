@@ -12,6 +12,6 @@ open EffectShape
 
 ATM : Program effect ⊤
 free ATM = impure (getPIN , λ where
-  n → ⦗ impure (verifyPIN n , λ where
+  n → ⦗ impure (correctPIN n , λ where
     true → ⦗ impure (showBalance , λ _ → ATM) ⦘
     false → ⦗ impure (throwException , ⊥-elim) ⦘) ⦘)

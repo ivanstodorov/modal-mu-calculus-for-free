@@ -21,14 +21,14 @@ private variable
 
 data EffectShape : Set where
   getPIN : EffectShape
-  verifyPIN : ℕ → EffectShape
+  correctPIN : ℕ → EffectShape
   showBalance : EffectShape
   throwException : EffectShape
 
 effect : Container 0ℓ 0ℓ
 Shape effect = EffectShape
 Position effect getPIN = ℕ
-Position effect (verifyPIN _) = Bool
+Position effect (correctPIN _) = Bool
 Position effect showBalance = ⊤
 Position effect throwException = ⊥
 
@@ -48,14 +48,14 @@ showBalanceˢ : (C : Container ℓ₁ ℓ₂) → ⦃ IOEffect :<: C ⦄ → Sha
 showBalanceˢ _ ⦃ inst ⦄ = injS inst showBalance
 
 data VerificationShape : Set where
-  verifyPIN : ℕ → VerificationShape
+  correctPIN : ℕ → VerificationShape
 
 verificationEffect : Container 0ℓ 0ℓ
 Shape verificationEffect = VerificationShape
-Position verificationEffect (verifyPIN _) = Bool
+Position verificationEffect (correctPIN _) = Bool
 
-verifyPINˢ : (C : Container ℓ₁ ℓ₂) → ⦃ verificationEffect :<: C ⦄ → ℕ → Shape C
-verifyPINˢ _ ⦃ inst ⦄ = injS inst ∘ verifyPIN
+correctPINˢ : (C : Container ℓ₁ ℓ₂) → ⦃ verificationEffect :<: C ⦄ → ℕ → Shape C
+correctPINˢ _ ⦃ inst ⦄ = injS inst ∘ correctPIN
 
 data ExceptionShape : Set where
   throwException : ExceptionShape

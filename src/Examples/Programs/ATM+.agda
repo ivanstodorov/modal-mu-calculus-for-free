@@ -7,10 +7,10 @@ open import Data.Empty using (⊥-elim)
 open import Data.Product using (_,_)
 open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using (⊤)
-open import Examples.Programs.Effect using (effect⁺; getPIN; verifyPIN; showBalance; throwException)
+open import Examples.Programs.Effect using (effect⁺; getPIN; correctPIN; showBalance; throwException)
 
 ATM⁺ : Program effect⁺ ⊤
 free ATM⁺ = impure (inj₁ getPIN , λ where
-  n → ⦗ impure (inj₂ (inj₁ (verifyPIN n)) , λ where
+  n → ⦗ impure (inj₂ (inj₁ (correctPIN n)) , λ where
     true → ⦗ impure (inj₁ showBalance , λ _ → ATM⁺) ⦘
     false → ⦗ impure (inj₂ (inj₂ throwException) , ⊥-elim) ⦘) ⦘)
