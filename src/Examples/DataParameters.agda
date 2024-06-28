@@ -29,19 +29,19 @@ open ActionFormula renaming (val_ to valᵃᶠ_; ∀〔_〕_ to ∀ᵃᶠ〔_〕
 open RegularFormula
 
 property₁ : Formula effect 0ℓ []
-property₁ = formula ⟨ actF (act getPIN) ⟩ true
+property₁ = formula ⟨ actF act getPIN ⟩ true
 
 proof₁ : ATM ⊨ property₁
 proof₁ = lift refl , zero , tt
 
 property₂ : Formula effect 0ℓ []
-property₂ = formula [ actF (act showBalance) ] false
+property₂ = formula [ actF act showBalance ] false
 
 proof₂ : ATM ⊨ property₂
 proof₂ ()
 
 property₃ : Formula effect 0ℓ []
-property₃ = formula [ actF ((act getPIN) ᶜ) ] false
+property₃ = formula [ actF act getPIN ᶜ ] false
 
 proof₃ : ATM ⊨ property₃
 proof₃ h = ⊥₀-elim (h (lift refl))
