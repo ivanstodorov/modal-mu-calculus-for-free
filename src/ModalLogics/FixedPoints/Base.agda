@@ -4,7 +4,7 @@ module ModalLogics.FixedPoints.Base where
 open import Common.Program using (Program; free; pure; impure)
 open import Common.RegularFormulas using (ActionFormula; _∈_)
 open import Data.Bool using (Bool; not)
-open import Data.Container using () renaming (Container to Containerˢᵗᵈ; Position to Positionˢᵗᵈ)
+open import Data.Container using (Container)
 open import Data.Empty.Polymorphic using (⊥)
 open import Data.Fin using (Fin; _≟_; _↑ˡ_; fromℕ<; inject₁)
 open import Data.List using (List; length; findIndexᵇ; lookup)
@@ -25,6 +25,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; subst; sym)
 open import Relation.Nullary using (¬_; yes; no)
 
 open Bool
+open Container
 open Fin
 open List
 open ℕ
@@ -43,12 +44,12 @@ data Maybe' (α : Set ℓ) : Set ℓ where
   done : Maybe' α
   fail : Maybe' α
 
-data Result (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
+data Result (C : Container ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
   res_ : Maybe' (Program C α × Fin n) → Result C α n
-  _×∃_ : ∀ {s} → ActionFormula C → (Positionˢᵗᵈ C s → Result C α n) → Result C α n
-  _×∀_ : ∀ {s} → ActionFormula C → (Positionˢᵗᵈ C s → Result C α n) → Result C α n
+  _×∃_ : ∀ {s} → ActionFormula (Shape C) → (Position C s → Result C α n) → Result C α n
+  _×∀_ : ∀ {s} → ActionFormula (Shape C) → (Position C s → Result C α n) → Result C α n
 
-unfold : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Result C α n → Maybe' (Program C α × Fin n) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Result C α n → Maybe' (Program C α × Fin n) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold (res v) o x = o ≡ v → x
 unfold (_×∃_ {s = s} af c) o x = s ∈ af × ∃[ p ] unfold (c p) o x
 unfold (_×∀_ {s = s} af c) o x = s ∈ af → ∀ p → unfold (c p) o x
@@ -62,27 +63,27 @@ xs < ys = length⁺ xs <′ length⁺ ys
     acc<′⇒acc< : {α : Set ℓ} → {xs : List⁺ α} → Acc _<′_ (length⁺ xs) → Acc _<_ xs
     acc<′⇒acc< (acc h) = acc λ hlt → acc<′⇒acc< (h hlt)
 
-unfold⁺ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → (rs : List⁺ (Result C α n)) → Acc _<_ rs → Maybe' (Program C α × Fin n) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+unfold⁺ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → (rs : List⁺ (Result C α n)) → Acc _<_ rs → Maybe' (Program C α × Fin n) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 unfold⁺ (r ∷ []) _ o x = unfold r o x
 unfold⁺ (r₁ ∷ r₂ ∷ rs) (acc h) o x = unfold r₁ o x × unfold⁺ (r₂ ∷ rs) (h ≤′-refl) o x
 
-record Container (C : Containerˢᵗᵈ ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
+record Containerⁱ (C : Container ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃) where
   constructor _▷_
   field
-    Shape : ℕ
-    Position : Fin Shape → Program C α → List⁺ (Result C α n)
+    Shapeⁱ : ℕ
+    Positionⁱ : Fin Shapeⁱ → Program C α → List⁺ (Result C α n)
 
-open Container
+open Containerⁱ
 
-extend : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Vec (FixedPoint × Container C α (suc n)) (suc n) → (Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+extend : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n) → (Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 extend xs w m (val (x , i)) with lookupᵛ xs i
 ... | leastFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (w o)
 ... | greatestFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (m o)
 extend _ _ _ done = ⊤
 extend _ _ _ fail = ⊥
 
-record W {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record M {C : Containerˢᵗᵈ ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Container C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record W {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record M {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 
 record W xs i where
   inductive
@@ -106,17 +107,17 @@ infixr 35 _⇒ⁱ_
 infix 30 μⁱ_
 infix 30 νⁱ_
 
-data Formulaⁱ (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁ where
-  trueⁱ falseⁱ : ∀ {n} → Formulaⁱ C n
-  ~ⁱ_ : ∀ {n} → Formulaⁱ C n → Formulaⁱ C n
-  _∧ⁱ_ _∨ⁱ_ _⇒ⁱ_ : ∀ {n} → Formulaⁱ C n → Formulaⁱ C n → Formulaⁱ C n
-  ⟨_⟩ⁱ_ [_]ⁱ_ : ∀ {n} → ActionFormula C → Formulaⁱ C n → Formulaⁱ C n
-  μⁱ_ νⁱ_ : ∀ {n} → Formulaⁱ C (suc n) → Formulaⁱ C n
-  refⁱ_ : ∀ {n} → Fin n → Formulaⁱ C n
+data Formulaⁱ (S : Set ℓ) : ℕ → Set ℓ where
+  trueⁱ falseⁱ : ∀ {n} → Formulaⁱ S n
+  ~ⁱ_ : ∀ {n} → Formulaⁱ S n → Formulaⁱ S n
+  _∧ⁱ_ _∨ⁱ_ _⇒ⁱ_ : ∀ {n} → Formulaⁱ S n → Formulaⁱ S n → Formulaⁱ S n
+  ⟨_⟩ⁱ_ [_]ⁱ_ : ∀ {n} → ActionFormula S → Formulaⁱ S n → Formulaⁱ S n
+  μⁱ_ νⁱ_ : ∀ {n} → Formulaⁱ S (suc n) → Formulaⁱ S n
+  refⁱ_ : ∀ {n} → Fin n → Formulaⁱ S n
 
 infix 25 _⊨ⁱ_
 
-_⊨ⁱ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaⁱ C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+_⊨ⁱ_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaⁱ (Shape C) zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   where
   infix 60 ref'〔_〕_
@@ -127,14 +128,14 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   infix 30 μ'_
   infix 30 ν'_
 
-  data Formula' (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁ where
-    true' false' : ∀ {n} → Formula' C n
-    _∧'_ _∨'_ : ∀ {n} → Formula' C n → Formula' C n → Formula' C n
-    ⟨_⟩'_ [_]'_ : ∀ {n} → ActionFormula C → Formula' C n → Formula' C n
-    μ'_ ν'_ : ∀ {n} → Formula' C (suc n) → Formula' C n
-    ref'〔_〕_ : ∀ {n} → Bool → Fin n → Formula' C n
+  data Formula' (S : Set ℓ) : ℕ → Set ℓ where
+    true' false' : ∀ {n} → Formula' S n
+    _∧'_ _∨'_ : ∀ {n} → Formula' S n → Formula' S n → Formula' S n
+    ⟨_⟩'_ [_]'_ : ∀ {n} → ActionFormula S → Formula' S n → Formula' S n
+    μ'_ ν'_ : ∀ {n} → Formula' S (suc n) → Formula' S n
+    ref'〔_〕_ : ∀ {n} → Bool → Fin n → Formula' S n
 
-  flipRef : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Fin n → Formula' C n → Formula' C n
+  flipRef : {S : Set ℓ} → {n : ℕ} → Fin n → Formula' S n → Formula' S n
   flipRef _ true' = true'
   flipRef _ false' = false'
   flipRef x (f'₁ ∧' f'₂) = flipRef x f'₁ ∧' flipRef x f'₂
@@ -147,7 +148,7 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   ... | no _ = ref'〔 b 〕 i
   ... | yes _ = ref'〔 not b 〕 i
 
-  negate : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formula' C n → Formula' C n
+  negate : {S : Set ℓ} → {n : ℕ} → Formula' S n → Formula' S n
   negate true' = false'
   negate false' = true'
   negate (f'₁ ∧' f'₂) = negate f'₁ ∨' negate f'₂
@@ -158,7 +159,7 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   negate (ν' f') = μ' flipRef zero (negate f')
   negate (ref'〔 b 〕 i) = ref'〔 not b 〕 i
 
-  fⁱ→f' : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaⁱ C n → Formula' C n
+  fⁱ→f' : {S : Set ℓ} → {n : ℕ} → Formulaⁱ S n → Formula' S n
   fⁱ→f' trueⁱ = true'
   fⁱ→f' falseⁱ = false'
   fⁱ→f' (~ⁱ fⁱ) = negate (fⁱ→f' fⁱ)
@@ -171,9 +172,9 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   fⁱ→f' (νⁱ fⁱ) = ν' fⁱ→f' fⁱ
   fⁱ→f' (refⁱ i) = ref'〔 true 〕 i
 
-  data Formulaᵈⁿᶠ-var (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
-  data Formulaᵈⁿᶠ-con (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
-  data Formulaᵈⁿᶠ-dis (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : ℕ → Set ℓ₁
+  data Formulaᵈⁿᶠ-var (S : Set ℓ) : ℕ → Set ℓ
+  data Formulaᵈⁿᶠ-con (S : Set ℓ) : ℕ → Set ℓ
+  data Formulaᵈⁿᶠ-dis (S : Set ℓ) : ℕ → Set ℓ
 
   infix 60 refᵈⁿᶠ_
   infix 55 ⟨_⟩ᵈⁿᶠ_
@@ -181,69 +182,69 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   infix 50 μᵈⁿᶠ_
   infix 50 νᵈⁿᶠ_
 
-  data Formulaᵈⁿᶠ-var C where
-    trueᵈⁿᶠ falseᵈⁿᶠ : ∀ {n} → Formulaᵈⁿᶠ-var C n
-    ⟨_⟩ᵈⁿᶠ_ [_]ᵈⁿᶠ_ : ∀ {n} → ActionFormula C → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-var C n
-    μᵈⁿᶠ_ νᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-dis C (suc n) → Formulaᵈⁿᶠ-var C n
-    refᵈⁿᶠ_ : ∀ {n} → Fin n → Formulaᵈⁿᶠ-var C n
+  data Formulaᵈⁿᶠ-var S where
+    trueᵈⁿᶠ falseᵈⁿᶠ : ∀ {n} → Formulaᵈⁿᶠ-var S n
+    ⟨_⟩ᵈⁿᶠ_ [_]ᵈⁿᶠ_ : ∀ {n} → ActionFormula S → Formulaᵈⁿᶠ-var S n → Formulaᵈⁿᶠ-var S n
+    μᵈⁿᶠ_ νᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-dis S (suc n) → Formulaᵈⁿᶠ-var S n
+    refᵈⁿᶠ_ : ∀ {n} → Fin n → Formulaᵈⁿᶠ-var S n
 
   infix 45 con-var_
   infixr 40 _∧ᵈⁿᶠ_
 
-  data Formulaᵈⁿᶠ-con C where
-    con-var_ : ∀ {n} → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-con C n
-    _∧ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-con C n
+  data Formulaᵈⁿᶠ-con S where
+    con-var_ : ∀ {n} → Formulaᵈⁿᶠ-var S n → Formulaᵈⁿᶠ-con S n
+    _∧ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-var S n → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-con S n
 
   infix 35 dis-con_
   infixr 30 _∨ᵈⁿᶠ_
 
-  data Formulaᵈⁿᶠ-dis C where
-    dis-con_ : ∀ {n} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-dis C n
-    _∨ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
+  data Formulaᵈⁿᶠ-dis S where
+    dis-con_ : ∀ {n} → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-dis S n
+    _∨ᵈⁿᶠ_ : ∀ {n} → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n
 
-  merge-dis-dis-or : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
+  merge-dis-dis-or : {S : Set ℓ} → {n : ℕ} → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n
   merge-dis-dis-or (dis-con c) d = c ∨ᵈⁿᶠ d
   merge-dis-dis-or (c ∨ᵈⁿᶠ d₁) d₂ = c ∨ᵈⁿᶠ merge-dis-dis-or d₁ d₂
 
-  merge-con-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-con C n
+  merge-con-con : {S : Set ℓ} → {n : ℕ} → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-con S n
   merge-con-con (con-var v) c = v ∧ᵈⁿᶠ c
   merge-con-con (v ∧ᵈⁿᶠ c₁) c₂ = v ∧ᵈⁿᶠ merge-con-con c₁ c₂
 
-  merge-con-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
+  merge-con-dis : {S : Set ℓ} → {n : ℕ} → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n
   merge-con-dis c₁ (dis-con c₂) = dis-con (merge-con-con c₁ c₂)
   merge-con-dis c₁ (c₂ ∨ᵈⁿᶠ d₂) = merge-con-con c₁ c₂ ∨ᵈⁿᶠ merge-con-dis c₁ d₂
 
-  merge-dis-dis-and : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
+  merge-dis-dis-and : {S : Set ℓ} → {n : ℕ} → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n
   merge-dis-dis-and (dis-con c) d = merge-con-dis c d
   merge-dis-dis-and (c ∨ᵈⁿᶠ d₁) d₂ = merge-dis-dis-or (merge-con-dis c d₂) (merge-dis-dis-and d₁ d₂)
 
-  f'→fᵈⁿᶠ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → Formula' C n → Formulaᵈⁿᶠ-dis C n
+  f'→fᵈⁿᶠ : {S : Set ℓ} → {n : ℕ} → Formula' S n → Formulaᵈⁿᶠ-dis S n
   f'→fᵈⁿᶠ true' = dis-con (con-var trueᵈⁿᶠ)
   f'→fᵈⁿᶠ false' = dis-con (con-var falseᵈⁿᶠ)
   f'→fᵈⁿᶠ (f'₁ ∧' f'₂) = merge-dis-dis-and (f'→fᵈⁿᶠ f'₁) (f'→fᵈⁿᶠ f'₂)
   f'→fᵈⁿᶠ (f'₁ ∨' f'₂) = merge-dis-dis-or (f'→fᵈⁿᶠ f'₁) (f'→fᵈⁿᶠ f'₂)
   f'→fᵈⁿᶠ (⟨ af ⟩' f') = merge-∃-dis af (f'→fᵈⁿᶠ f')
     where
-    merge-∃-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-var C n
+    merge-∃-var : {S : Set ℓ} → {n : ℕ} → ActionFormula S → Formulaᵈⁿᶠ-var S n → Formulaᵈⁿᶠ-var S n
     merge-∃-var af v = ⟨ af ⟩ᵈⁿᶠ v
 
-    merge-∃-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-con C n
+    merge-∃-con : {S : Set ℓ} → {n : ℕ} → ActionFormula S → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-con S n
     merge-∃-con af (con-var v) = con-var (merge-∃-var af v)
     merge-∃-con af (v ∧ᵈⁿᶠ c) = merge-∃-var af v ∧ᵈⁿᶠ merge-∃-con af c
 
-    merge-∃-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
+    merge-∃-dis : {S : Set ℓ} → {n : ℕ} → ActionFormula S → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n
     merge-∃-dis af (dis-con c) = dis-con (merge-∃-con af c)
     merge-∃-dis af (c ∨ᵈⁿᶠ d) = merge-∃-con af c ∨ᵈⁿᶠ merge-∃-dis af d
   f'→fᵈⁿᶠ ([ af ]' f') = merge-∀-dis af (f'→fᵈⁿᶠ f')
     where
-    merge-∀-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-var C n → Formulaᵈⁿᶠ-var C n
+    merge-∀-var : {S : Set ℓ} → {n : ℕ} → ActionFormula S → Formulaᵈⁿᶠ-var S n → Formulaᵈⁿᶠ-var S n
     merge-∀-var af v = [ af ]ᵈⁿᶠ v
 
-    merge-∀-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-con C n → Formulaᵈⁿᶠ-con C n
+    merge-∀-con : {S : Set ℓ} → {n : ℕ} → ActionFormula S → Formulaᵈⁿᶠ-con S n → Formulaᵈⁿᶠ-con S n
     merge-∀-con af (con-var v) = con-var (merge-∀-var af v)
     merge-∀-con af (v ∧ᵈⁿᶠ c) = merge-∀-var af v ∧ᵈⁿᶠ merge-∀-con af c
 
-    merge-∀-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → ActionFormula C → Formulaᵈⁿᶠ-dis C n → Formulaᵈⁿᶠ-dis C n
+    merge-∀-dis : {S : Set ℓ} → {n : ℕ} → ActionFormula S → Formulaᵈⁿᶠ-dis S n → Formulaᵈⁿᶠ-dis S n
     merge-∀-dis af (dis-con c) = dis-con (merge-∀-con af c)
     merge-∀-dis af (c ∨ᵈⁿᶠ d) = merge-∀-con af c ∨ᵈⁿᶠ merge-∀-dis af d
   f'→fᵈⁿᶠ (μ' f') = dis-con (con-var (μᵈⁿᶠ f'→fᵈⁿᶠ f'))
@@ -251,23 +252,23 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   f'→fᵈⁿᶠ (ref'〔 false 〕 _) = dis-con con-var falseᵈⁿᶠ
   f'→fᵈⁿᶠ (ref'〔 true 〕 i) = dis-con (con-var (refᵈⁿᶠ i))
 
-  _↑_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Container C α n → (x : ℕ) → Container C α (n + x)
-  Shape ((S ▷ _) ↑ _) = S
-  Position ((S ▷ P) ↑ n) s i with P s i
+  _↑_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Containerⁱ C α n → (x : ℕ) → Containerⁱ C α (n + x)
+  Shapeⁱ ((S ▷ _) ↑ _) = S
+  Positionⁱ ((S ▷ P) ↑ n) s i with P s i
   ... | xs = map⁺ (λ x → x ↑' n) xs
     where
-    _↑'_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Result C α n → (x : ℕ) → Result C α (n + x)
+    _↑'_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Result C α n → (x : ℕ) → Result C α (n + x)
     (res (val (fst , snd))) ↑' x = res (val (fst , snd ↑ˡ x))
     (res done) ↑' _ = res done
     (res fail) ↑' _ = res fail
     (af ×∃ c) ↑' n = af ×∃ λ p → (c p) ↑' n
     (af ×∀ c) ↑' n = af ×∀ λ p → (c p) ↑' n
 
-  data ModalitySequence (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : Set ℓ₁ where
-    ⟪_⟫_ ⟦_⟧_ : ActionFormula C → ModalitySequence C → ModalitySequence C
-    ε : ModalitySequence C
+  data ModalitySequence (S : Set ℓ) : Set ℓ where
+    ⟪_⟫_ ⟦_⟧_ : ActionFormula S → ModalitySequence S → ModalitySequence S
+    ε : ModalitySequence S
 
-  apply : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence C → Program C α → (Maybe' (Program C α) → Result C α n) → Result C α n
+  apply : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence (Shape C) → Program C α → (Maybe' (Program C α) → Result C α n) → Result C α n
   apply (⟪ af ⟫ m) x f with free x
   ... | pure _ = f fail
   ... | impure (_ , c) = af ×∃ λ p → apply m (c p) f
@@ -276,56 +277,56 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   ... | impure (_ , c) = af ×∀ λ p → apply m (c p) f
   apply ε x f = f (val x)
 
-  containerize-var : {C : Containerˢᵗᵈ ℓ₁ ℓ₂}→ {n : ℕ} → Formulaᵈⁿᶠ-var C (suc n) → (n₁ : ℕ) → Vec (Fin (suc n₁)) (suc n) → (α : Set ℓ₃) → ModalitySequence C × Maybe' (∃[ n₂ ] (Fin (suc n₁ + n₂)) × Vec (FixedPoint × Container C α (suc n₁ + n₂)) n₂)
-  containerize-con : {C : Containerˢᵗᵈ ℓ₁ ℓ₂}→ {n : ℕ} → Formulaᵈⁿᶠ-con C (suc n) → (n₁ : ℕ) → Vec (Fin (suc n₁)) (suc n) → (α : Set ℓ₃) → ∃[ n₂ ] List⁺ (ModalitySequence C × Maybe' (Fin (suc n₁ + n₂))) × Vec (FixedPoint × Container C α (suc n₁ + n₂)) n₂
-  containerize-dis : {C : Containerˢᵗᵈ ℓ₁ ℓ₂}→ {n : ℕ} → Formulaᵈⁿᶠ-dis C (suc n) → (n₁ : ℕ) → Vec (Fin (suc n₁)) (suc n) → (α : Set ℓ₃) → ∃[ n₂ ] List⁺ (List⁺ (ModalitySequence C × Maybe' (Fin (suc n₁ + n₂)))) × Vec (FixedPoint × Container C α (suc n₁ + n₂)) n₂
-  containerize : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {n : ℕ} → FixedPoint → Formulaᵈⁿᶠ-dis C (suc n) → (n₁ : ℕ) → Vec (Fin n₁) n → (α : Set ℓ₃) → ∃[ n₂ ] Vec (FixedPoint × Container C α (n₁ + suc n₂)) (suc n₂)
+  containerize-var : {n n₁ : ℕ} → (C : Container ℓ₁ ℓ₂) → (α : Set ℓ₃) → Formulaᵈⁿᶠ-var (Shape C) (suc n) → Vec (Fin (suc n₁)) (suc n) → ModalitySequence (Shape C) × Maybe' (∃[ n₂ ] (Fin (suc n₁ + n₂)) × Vec (FixedPoint × Containerⁱ C α (suc n₁ + n₂)) n₂)
+  containerize-con : {n n₁ : ℕ} → (C : Container ℓ₁ ℓ₂) → (α : Set ℓ₃) → Formulaᵈⁿᶠ-con (Shape C) (suc n) → Vec (Fin (suc n₁)) (suc n) → ∃[ n₂ ] List⁺ (ModalitySequence (Shape C) × Maybe' (Fin (suc n₁ + n₂))) × Vec (FixedPoint × Containerⁱ C α (suc n₁ + n₂)) n₂
+  containerize-dis : {n n₁ : ℕ} → (C : Container ℓ₁ ℓ₂) → (α : Set ℓ₃) → Formulaᵈⁿᶠ-dis (Shape C) (suc n) → Vec (Fin (suc n₁)) (suc n) → ∃[ n₂ ] List⁺ (List⁺ (ModalitySequence (Shape C) × Maybe' (Fin (suc n₁ + n₂)))) × Vec (FixedPoint × Containerⁱ C α (suc n₁ + n₂)) n₂
+  containerize : {n n₁ : ℕ} → (C : Container ℓ₁ ℓ₂) → (α : Set ℓ₃) → FixedPoint → Formulaᵈⁿᶠ-dis (Shape C) (suc n) → Vec (Fin n₁) n → ∃[ n₂ ] Vec (FixedPoint × Containerⁱ C α (n₁ + suc n₂)) (suc n₂)
 
-  containerize-var trueᵈⁿᶠ _ _ _ = ε , done
-  containerize-var falseᵈⁿᶠ _ _ _ = ε , fail
-  containerize-var (⟨ af ⟩ᵈⁿᶠ v) n₁ prev α with containerize-var v n₁ prev α
+  containerize-var _ _ trueᵈⁿᶠ _ = ε , done
+  containerize-var _ _ falseᵈⁿᶠ _ = ε , fail
+  containerize-var C α (⟨ af ⟩ᵈⁿᶠ v) prev with containerize-var C α v prev
   ... | m , x = ⟪ af ⟫ m , x
-  containerize-var ([ af ]ᵈⁿᶠ v) n₁ prev α with containerize-var v n₁ prev α
+  containerize-var C α ([ af ]ᵈⁿᶠ v) prev with containerize-var C α v prev
   ... | m , x = ⟦ af ⟧ m , x
-  containerize-var (μᵈⁿᶠ d) n₁ prev α with containerize leastFP d (suc n₁) prev α
+  containerize-var {n₁ = n₁} C α (μᵈⁿᶠ d) prev with containerize C α leastFP d prev
   ... | n₂ , Cs = ε , val (suc n₂ , subst Fin (sym (+-suc (suc n₁) n₂)) (fromℕ< (m≤n⇒m≤n+o n₂ (n<1+n (suc n₁)))) , Cs)
-  containerize-var (νᵈⁿᶠ d) n₁ prev α with containerize greatestFP d (suc n₁) prev α
+  containerize-var {n₁ = n₁} C α (νᵈⁿᶠ d) prev with containerize C α greatestFP d prev
   ... | n₂ , Cs = ε , val (suc n₂ , subst Fin (sym (+-suc (suc n₁) n₂)) (fromℕ< (m≤n⇒m≤n+o n₂ (n<1+n (suc n₁)))) , Cs)
-  containerize-var (refᵈⁿᶠ i) n₁ prev α = ε , val (zero , subst Fin (sym (+-identityʳ (suc n₁))) (lookupᵛ prev i) , [])
+  containerize-var {n₁ = n₁} _ _ (refᵈⁿᶠ i) prev = ε , val (zero , subst Fin (sym (+-identityʳ (suc n₁))) (lookupᵛ prev i) , [])
 
-  containerize-con (con-var v) n₁ prev α with containerize-var v n₁ prev α
+  containerize-con C α (con-var v) prev with containerize-var C α v prev
   ... | m , val (n₂ , i , Cs) = n₂ , [ m , val i ] , Cs
   ... | m , done = zero , [ m , done ] , []
   ... | m , fail = zero , [ m , fail ] , []
-  containerize-con (v ∧ᵈⁿᶠ c) n₁ prev α with containerize-var v n₁ prev α
-  containerize-con {C = C} (v ∧ᵈⁿᶠ c) n₁ prev α | m , val (n₂ , i , Cs₁) with containerize-con c (n₁ + n₂) (mapᵛ (λ x → x ↑ˡ n₂) prev) α
-  ... | n₃ , xs , Cs₂ = n₂ + n₃ , subst (λ n → List⁺ (ModalitySequence C × Maybe' (Fin n)) × Vec (FixedPoint × Container C α n) (n₂ + n₃)) (+-assoc (suc n₁) n₂ n₃) ((m , val (fromℕ< (m≤n⇒m≤n+o n₃ (n<1+n (n₁ + n₂))))) ∷⁺ xs , mapᵛ (λ (fp , C) → fp , (C ↑ n₃)) Cs₁ ++ Cs₂)
-  containerize-con (v ∧ᵈⁿᶠ c) n₁ prev α | m , done with containerize-con c n₁ prev α
+  containerize-con C α (v ∧ᵈⁿᶠ c) prev with containerize-var C α v prev
+  containerize-con {n₁ = n₁} C α (v ∧ᵈⁿᶠ c) prev | m , val (n₂ , _ , Cs₁) with containerize-con C α c (mapᵛ (λ x → x ↑ˡ n₂) prev)
+  ... | n₃ , xs , Cs₂ = n₂ + n₃ , subst (λ n → List⁺ (ModalitySequence (Shape C) × Maybe' (Fin n)) × Vec (FixedPoint × Containerⁱ C α n) (n₂ + n₃)) (+-assoc (suc n₁) n₂ n₃) ((m , val (fromℕ< (m≤n⇒m≤n+o n₃ (n<1+n (n₁ + n₂))))) ∷⁺ xs , mapᵛ (λ (fp , C) → fp , (C ↑ n₃)) Cs₁ ++ Cs₂)
+  containerize-con C α (v ∧ᵈⁿᶠ c) prev | m , done with containerize-con C α c prev
   ... | n₂ , xs , Cs = n₂ , (m , done) ∷⁺ xs , Cs
-  containerize-con (v ∧ᵈⁿᶠ c) n₁ prev α | m , fail with containerize-con c n₁ prev α
+  containerize-con C α (v ∧ᵈⁿᶠ c) prev | m , fail with containerize-con C α c prev
   ... | n₂ , xs , Cs = n₂ , (m , fail) ∷⁺ xs , Cs
 
-  containerize-dis (dis-con c) n₁ prev α with containerize-con c n₁ prev α
+  containerize-dis C α (dis-con c) prev with containerize-con C α c prev
   ... | n₂ , x , Cs = n₂ , [ x ] , Cs
-  containerize-dis {C = C} (c ∨ᵈⁿᶠ d) n₁ prev α with containerize-con c n₁ prev α
-  ... | n₂ , x , Cs₁ with containerize-dis d (n₁ + n₂) (mapᵛ (λ x → x ↑ˡ n₂) prev) α
-  ...   | n₃ , xs , Cs₂ = n₂ + n₃ , subst (λ n → List⁺ (List⁺ (ModalitySequence C × Maybe' (Fin n))) × Vec (FixedPoint × Container C α n) (n₂ + n₃)) (+-assoc (suc n₁) n₂ n₃) (map⁺ (λ { (m , val x) → m , val (x ↑ˡ n₃) ; (m , done) → m , done ; (m , fail) → m , fail }) x ∷⁺ xs , mapᵛ (λ (fp , C) → fp , (C ↑ n₃)) Cs₁ ++ Cs₂)
+  containerize-dis {n₁ = n₁} C α (c ∨ᵈⁿᶠ d) prev with containerize-con C α c prev
+  ... | n₂ , x , Cs₁ with containerize-dis C α d (mapᵛ (λ x → x ↑ˡ n₂) prev)
+  ...   | n₃ , xs , Cs₂ = n₂ + n₃ , subst (λ n → List⁺ (List⁺ (ModalitySequence (Shape C) × Maybe' (Fin n))) × Vec (FixedPoint × Containerⁱ C α n) (n₂ + n₃)) (+-assoc (suc n₁) n₂ n₃) (map⁺ (λ { (m , val x) → m , val (x ↑ˡ n₃) ; (m , done) → m , done ; (m , fail) → m , fail }) x ∷⁺ xs , mapᵛ (λ (fp , C) → fp , (C ↑ n₃)) Cs₁ ++ Cs₂)
 
-  containerize {C = C} fp d n₁ prev α with containerize-dis d n₁ (fromℕ< (n<1+n n₁) ∷ mapᵛ inject₁ prev) α
-  ... | n₂ , xs , Cs = n₂ , subst (λ n → Vec (FixedPoint × Container C α n) (suc n₂)) (sym (+-suc n₁ n₂)) ((fp , container) ∷ Cs)
+  containerize {n₁ = n₁} C α fp d prev with containerize-dis C α d (fromℕ< (n<1+n n₁) ∷ mapᵛ inject₁ prev)
+  ... | n₂ , xs , Cs = n₂ , subst (λ n → Vec (FixedPoint × Containerⁱ C α n) (suc n₂)) (sym (+-suc n₁ n₂)) ((fp , containerⁱ) ∷ Cs)
     where
-    container : Container C α (suc n₁ + n₂)
-    Shape container = length⁺ xs
-    Position container s i = foldr ((λ (m , x) acc → position m i x ∷⁺ acc)) ((λ (m , x) → [ position m i x ])) (lookup (toList xs) s)
+    containerⁱ : Containerⁱ C α (suc n₁ + n₂)
+    Shapeⁱ containerⁱ = length⁺ xs
+    Positionⁱ containerⁱ s i = foldr ((λ (m , x) acc → position m i x ∷⁺ acc)) ((λ (m , x) → [ position m i x ])) (lookup (toList xs) s)
       where
-      position : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence C → Program C α → Maybe' (Fin n) → Result C α n
+      position : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → ModalitySequence (Shape C) → Program C α → Maybe' (Fin n) → Result C α n
       position m i (val x) = apply m i λ { (val o) → res (val (o , x)) ; done → res done ; fail → res fail }
       position m i done = apply m i λ { (val _) → res done ; done → res done ; fail → res fail }
       position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
 
   infix 25 _⊨ᵛ_
 
-  _⊨ᵛ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-var C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  _⊨ᵛ_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-var (Shape C) zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
   _ ⊨ᵛ trueᵈⁿᶠ = ⊤
   _ ⊨ᵛ falseᵈⁿᶠ = ⊥
   x ⊨ᵛ ⟨ af ⟩ᵈⁿᶠ v with free x
@@ -334,18 +335,18 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   x ⊨ᵛ [ af ]ᵈⁿᶠ v with free x
   ... | pure _ = ⊤
   ... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ᵛ v
-  _⊨ᵛ_ {α = α} x (μᵈⁿᶠ d) = W (proj₂ (containerize leastFP d zero [] α)) (val (x , zero))
-  _⊨ᵛ_ {α = α} x (νᵈⁿᶠ d) = M (proj₂ (containerize greatestFP d zero [] α)) (val (x , zero))
+  _⊨ᵛ_ {C = C} {α = α} x (μᵈⁿᶠ d) = W (proj₂ (containerize {n₁ = zero} C α leastFP d [])) (val (x , zero))
+  _⊨ᵛ_ {C = C} {α = α} x (νᵈⁿᶠ d) = M (proj₂ (containerize {n₁ = zero} C α greatestFP d [])) (val (x , zero))
 
   infix 25 _⊨ᶜ_
 
-  _⊨ᶜ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-con C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  _⊨ᶜ_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-con (Shape C) zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
   x ⊨ᶜ con-var v = x ⊨ᵛ v
   x ⊨ᶜ v ∧ᵈⁿᶠ c = x ⊨ᵛ v × x ⊨ᶜ c
 
   infix 25 _⊨ᵈ_
 
-  _⊨ᵈ_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-dis C zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+  _⊨ᵈ_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formulaᵈⁿᶠ-dis (Shape C) zero → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
   x ⊨ᵈ dis-con c = x ⊨ᶜ c
   x ⊨ᵈ c ∨ᵈⁿᶠ d = x ⊨ᶜ c ⊎ x ⊨ᵈ d
 
@@ -359,20 +360,20 @@ infixr 35 _⇒_
 infix 30 μ_．_
 infix 30 ν_．_
 
-data Formula (C : Containerˢᵗᵈ ℓ₁ ℓ₂) : Set ℓ₁ where
-  true false : Formula C
-  ~_ : Formula C → Formula C
-  _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
-  ⟨_⟩_ [_]_ : ActionFormula C → Formula C → Formula C
-  μ_．_ ν_．_ : String → Formula C → Formula C
-  ref_ : String → Formula C
+data Formula (S : Set ℓ) : Set ℓ where
+  true false : Formula S
+  ~_ : Formula S → Formula S
+  _∧_ _∨_ _⇒_ : Formula S → Formula S → Formula S
+  ⟨_⟩_ [_]_ : ActionFormula S → Formula S → Formula S
+  μ_．_ ν_．_ : String → Formula S → Formula S
+  ref_ : String → Formula S
 
 infix 25 _⊨_
 
-_⊨_ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formula C → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+_⊨_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formula (Shape C) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 x ⊨ f = x ⊨ⁱ f→fⁱ f []
   where
-  f→fⁱ : {C : Containerˢᵗᵈ ℓ₁ ℓ₂} → Formula C → (xs : List String) → Formulaⁱ C (length xs)
+  f→fⁱ : {S : Set ℓ} → Formula S → (xs : List String) → Formulaⁱ S (length xs)
   f→fⁱ true _ = trueⁱ
   f→fⁱ false _ = falseⁱ
   f→fⁱ (~ f) xs = ~ⁱ f→fⁱ f xs

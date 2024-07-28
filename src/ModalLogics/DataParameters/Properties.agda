@@ -11,11 +11,12 @@ open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; _�
 open import Relation.Nullary using (Dec)
 
 private variable
-  ℓ ℓ₁ ℓ₂ ℓ₃ : Level
-  C : Container ℓ₁ ℓ₂
-  α : Set ℓ₃
-  αs : List (Set ℓ ⊎ Set ℓ)
+  ℓ ℓₛ ℓₚ ℓₓ ℓ₁ : Level
+  S : Set ℓ
+  C : Container ℓₛ ℓₚ
+  X : Set ℓₓ
+  αs : List (Set ℓ₁ ⊎ Set ℓ₁)
 
 postulate
-  ∈-dec : (s : Shape C) → (af : ActionFormula C ℓ) → Dec (s ∈ af)
-  ⊨-dec : (x : Program C α) → (f : Formula C ℓ αs) → Dec (x ⊨ f)
+  ∈-dec : (s : S) → (af : ActionFormula S ℓ₁) → Dec (s ∈ af)
+  ⊨-dec : (x : Program C X) → (f : Formula (Shape C) ℓ₁ αs) → Dec (x ⊨ f)

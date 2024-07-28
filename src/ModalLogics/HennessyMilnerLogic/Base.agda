@@ -12,7 +12,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_; _≢_)
 open import Relation.Nullary using (¬_)
 
 private variable
-  ℓ₁ ℓ₂ ℓ₃ : Level
+  ℓ ℓ₁ ℓ₂ ℓ₃ : Level
 
 infix 50 ~_
 infix 45 ⟨_⟩_
@@ -21,15 +21,15 @@ infixr 40 _∧_
 infixr 35 _∨_
 infixr 30 _⇒_
 
-data Formula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
-  true false : Formula C
-  ~_ : Formula C → Formula C
-  _∧_ _∨_ _⇒_ : Formula C → Formula C → Formula C
-  ⟨_⟩_ [_]_ : Shape C → Formula C → Formula C
+data Formula (S : Set ℓ) : Set ℓ where
+  true false : Formula S
+  ~_ : Formula S → Formula S
+  _∧_ _∨_ _⇒_ : Formula S → Formula S → Formula S
+  ⟨_⟩_ [_]_ : S → Formula S → Formula S
 
 infix 25 _⊨_
 
-_⊨_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formula C → Set (ℓ₁ ⊔ ℓ₂)
+_⊨_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → Program C α → Formula (Shape C) → Set (ℓ₁ ⊔ ℓ₂)
 _ ⊨ true = ⊤
 _ ⊨ false = ⊥
 x ⊨ ~ f = ¬ x ⊨ f

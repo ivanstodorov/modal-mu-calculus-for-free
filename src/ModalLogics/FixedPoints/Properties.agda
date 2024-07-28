@@ -9,10 +9,11 @@ open import ModalLogics.FixedPoints.Base using (Formula; _⊨_)
 open import Relation.Nullary using (Dec)
 
 private variable
-  ℓ₁ ℓ₂ ℓ₃ : Level
+  ℓ ℓ₁ ℓ₂ ℓ₃ : Level
+  S : Set ℓ
   C : Container ℓ₁ ℓ₂
   α : Set ℓ₃
 
 postulate
-  ∈-dec : (s : Shape C) → (af : ActionFormula C) → Dec (s ∈ af)
-  ⊨-dec : (x : Program C α) → (f : Formula C) → Dec (x ⊨ f)
+  ∈-dec : (s : S) → (af : ActionFormula S) → Dec (s ∈ af)
+  ⊨-dec : (x : Program C α) → (f : Formula (Shape C)) → Dec (x ⊨ f)

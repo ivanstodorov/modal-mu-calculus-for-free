@@ -32,3 +32,6 @@ instance
   C₁:<:C₂→C₁:<:|C₃⊎C₂| : {C₁ : Container ℓ₁ ℓ₂} → {C₂ : Container ℓ₃ ℓ₄} → {C₃ : Container ℓ₅ ℓ₄} → ⦃ C₁ :<: C₂ ⦄ → C₁ :<: (C₃ ⊎ C₂)
   injS ⦃ C₁:<:C₂→C₁:<:|C₃⊎C₂| ⦃ inst ⦄ ⦄ = inj₂ ∘ injS inst
   projP ⦃ C₁:<:C₂→C₁:<:|C₃⊎C₂| ⦃ inst ⦄ ⦄ = projP inst
+
+inj : {C₁ : Container ℓ₁ ℓ₂} → Shape C₁ → (C₂ : Container ℓ₃ ℓ₄) → ⦃ C₁ :<: C₂ ⦄ → Shape C₂
+inj s _ ⦃ inst ⦄ = injS inst s

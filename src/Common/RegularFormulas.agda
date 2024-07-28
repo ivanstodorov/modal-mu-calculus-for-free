@@ -11,22 +11,22 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_)
 
 private variable
-  ℓ₁ ℓ₂ : Level
+  ℓ : Level
 
 infix 100 act_
 infix 95 _ᶜ
 infixr 90 _∩_
 infixr 85 _∪_
 
-data ActionFormula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
-  true false : ActionFormula C
-  act_ : Shape C → ActionFormula C
-  _ᶜ : ActionFormula C → ActionFormula C
-  _∩_ _∪_ : ActionFormula C → ActionFormula C → ActionFormula C
+data ActionFormula (S : Set ℓ) : Set ℓ where
+  true false : ActionFormula S
+  act_ : S → ActionFormula S
+  _ᶜ : ActionFormula S → ActionFormula S
+  _∩_ _∪_ : ActionFormula S → ActionFormula S → ActionFormula S
 
 infix 25 _∈_
 
-_∈_ : {C : Container ℓ₁ ℓ₂} → Shape C → ActionFormula C → Set ℓ₁
+_∈_ : {S : Set ℓ} → S → ActionFormula S → Set ℓ
 _ ∈ true = ⊤
 _ ∈ false = ⊥
 s₁ ∈ act s₂ = s₁ ≡ s₂
@@ -40,8 +40,8 @@ infix 75 _⁺
 infixr 70 _·_
 infixr 65 _+_
 
-data RegularFormula (C : Container ℓ₁ ℓ₂) : Set ℓ₁ where
-  ε : RegularFormula C
-  actF_ : ActionFormula C → RegularFormula C
-  _·_ _+_ : RegularFormula C → RegularFormula C → RegularFormula C
-  _* _⁺ : RegularFormula C → RegularFormula C
+data RegularFormula (S : Set ℓ) : Set ℓ where
+  ε : RegularFormula S
+  actF_ : ActionFormula S → RegularFormula S
+  _·_ _+_ : RegularFormula S → RegularFormula S → RegularFormula S
+  _* _⁺ : RegularFormula S → RegularFormula S

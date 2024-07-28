@@ -2,11 +2,11 @@
 module Examples.RegularFormulas where
 
 open import Common.RegularFormulas using (ActionFormula; RegularFormula)
-open import Data.Bool using (true; false)
+open import Data.Bool using (false; true)
+open import Data.Container using (Shape)
 open import Data.Fin using (zero)
 open import Data.Nat using (zero)
 open import Data.Product using (_,_)
-open import Data.Sum using (inj₁)
 open import Data.Unit using () renaming (tt to tt₀)
 open import Data.Unit.Polymorphic using (tt)
 open import Examples.FixedPoints using (proof₅)
@@ -21,7 +21,7 @@ open RegularFormula
 open M
 open Formula
 
-property : Formula effect⁺
+property : Formula (Shape effect⁺)
 property = [ actF true * ] ⟨ actF true ⟩ true
 
 proof₁ : ATMˢ-rec ⊨ property

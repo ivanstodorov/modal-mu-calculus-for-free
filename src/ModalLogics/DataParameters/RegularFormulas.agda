@@ -11,7 +11,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Nullary using (¬_)
 
 private variable
-  ℓ ℓ₁ ℓ₂ : Level
+  ℓ ℓ₁ : Level
 
 infix 125 val_
 infix 125 act_
@@ -21,21 +21,21 @@ infixr 110 _∪_
 infix 105 ∀〔_〕_
 infix 105 ∃〔_〕_
 
-data ActionFormula (C : Container ℓ₁ ℓ₂) (ℓ : Level) : Set ((suc ℓ) ⊔ ℓ₁) where
-  true false : ActionFormula C ℓ
-  val_ : Set ℓ → ActionFormula C ℓ
-  act_ : Shape C → ActionFormula C ℓ
-  _ᶜ : ActionFormula C ℓ → ActionFormula C ℓ
-  _∩_ _∪_ : ActionFormula C ℓ → ActionFormula C ℓ → ActionFormula C ℓ
-  ∀〔_〕_ ∃〔_〕_ : (α : Set ℓ) → (α → ActionFormula C ℓ) → ActionFormula C ℓ
+data ActionFormula (S : Set ℓ) (ℓ₁ : Level) : Set (ℓ ⊔ (suc ℓ₁)) where
+  true false : ActionFormula S ℓ₁
+  val_ : Set ℓ₁ → ActionFormula S ℓ₁
+  act_ : S → ActionFormula S ℓ₁
+  _ᶜ : ActionFormula S ℓ₁ → ActionFormula S ℓ₁
+  _∩_ _∪_ : ActionFormula S ℓ₁ → ActionFormula S ℓ₁ → ActionFormula S ℓ₁
+  ∀〔_〕_ ∃〔_〕_ : (α : Set ℓ₁) → (α → ActionFormula S ℓ₁) → ActionFormula S ℓ₁
 
 infix 25 _∈_
 
-_∈_ : {C : Container ℓ₁ ℓ₂} → Shape C → ActionFormula C ℓ → Set (ℓ ⊔ ℓ₁)
+_∈_ : {S : Set ℓ} → S → ActionFormula S ℓ₁ → Set (ℓ ⊔ ℓ₁)
 _ ∈ true = ⊤
 _ ∈ false = ⊥
-_∈_ {ℓ₁ = ℓ₁} {ℓ = ℓ} _ (val x) = Lift (ℓ ⊔ ℓ₁) x
-_∈_ {ℓ₁ = ℓ₁} {ℓ = ℓ} s₁ (act s₂) = Lift (ℓ ⊔ ℓ₁) (s₁ ≡ s₂)
+_∈_ {ℓ = ℓ} {ℓ₁ = ℓ₁} _ (val x) = Lift (ℓ ⊔ ℓ₁) x
+_∈_ {ℓ = ℓ} {ℓ₁ = ℓ₁} s₁ (act s₂) = Lift (ℓ ⊔ ℓ₁) (s₁ ≡ s₂)
 s ∈ af ᶜ = ¬ s ∈ af
 s ∈ af₁ ∩ af₂ = s ∈ af₁ × s ∈ af₂
 s ∈ af₁ ∪ af₂ = s ∈ af₁ ⊎ s ∈ af₂
@@ -48,8 +48,8 @@ infix 95 _⁺
 infixr 90 _·_
 infixr 85 _+_
 
-data RegularFormula (C : Container ℓ₁ ℓ₂) (ℓ : Level) : Set ((suc ℓ) ⊔ ℓ₁) where
-  ε : RegularFormula C ℓ
-  actF_ : ActionFormula C ℓ → RegularFormula C ℓ
-  _·_ _+_ : RegularFormula C ℓ → RegularFormula C ℓ → RegularFormula C ℓ
-  _* _⁺ : RegularFormula C ℓ → RegularFormula C ℓ
+data RegularFormula (S : Set ℓ) (ℓ₁ : Level) : Set (ℓ ⊔ (suc ℓ₁)) where
+  ε : RegularFormula S ℓ₁
+  actF_ : ActionFormula S ℓ₁ → RegularFormula S ℓ₁
+  _·_ _+_ : RegularFormula S ℓ₁ → RegularFormula S ℓ₁ → RegularFormula S ℓ₁
+  _* _⁺ : RegularFormula S ℓ₁ → RegularFormula S ℓ₁

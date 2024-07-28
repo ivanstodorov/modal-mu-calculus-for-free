@@ -14,7 +14,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using () renaming (⊤ to ⊤₀; tt to tt₀)
 open import Data.Unit.Polymorphic using (tt)
 open import Level using (Level; 0ℓ; lift)
-open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifiedⁱ; Parameterizedⁱ; Arguments; M; mᶜ; _⊨_)
+open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifiedⁱ; Parameterizedⁱ; M; mᶜ; []; _∷_; _⊨_)
 open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; RegularFormula)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 
@@ -25,7 +25,6 @@ open ℕ
 open Formulaⁱ
 open Quantifiedⁱ
 open Parameterizedⁱ
-open Arguments
 open M
 open ActionFormula renaming (val_ to valᵃᶠ_; ∃〔_〕_ to ∃ᵃᶠ〔_〕_)
 open RegularFormula
@@ -47,7 +46,7 @@ program : List String → Program communicationEffect ⊤₀
 free (program []) = pure tt₀
 free (program (i ∷ is)) = impure (send i , λ _ → ⦗ impure (receive , λ _ → program is) ⦘)
 
-property₁ : Formula communicationEffect 0ℓ []
+property₁ : Formula (Shape communicationEffect) 0ℓ []
 property₁ = formula ν ℕ ↦ (λ n → quantified formula [ actF ((∃ᵃᶠ〔 String 〕 λ x → act send x) ∪ act receive) ᶜ ] ref zero ． (n ∷ []) ∧ [ actF ∃ᵃᶠ〔 String 〕 (λ x → act send x) ] ref zero ． (suc n ∷ []) ∧ [ actF act receive ] (val (n > 0) ∧ ref zero ． (pred n ∷ []))) ． (zero ∷ [])
 
 proof₁ : (is : List String) → program is ⊨ property₁
