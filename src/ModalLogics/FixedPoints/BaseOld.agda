@@ -157,25 +157,25 @@ containerize {n = n} C α d prev with containerize-dis d prev
     position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
 
 extend : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → (Maybe' (Program C α × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis (Shape C) (suc n) × Previous (Shape C) (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' (Program C α × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis (Shape C) (suc n) × Previous (Shape C) (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' (Program C α × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis (Shape C) (suc n) × Previous (Shape C) (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-extend {C = C} {α = α} w _ (val (x , leastFP , _ , d , prev)) = ∃[ s ] ∀ {o} → let rs = Positionⁱ (containerize C α d prev) s x in unfold⁺ rs (<-wf rs) o (w o)
-extend {C = C} {α = α} _ m (val (x , greatestFP , _ , d , prev)) = ∃[ s ] ∀ {o} → let rs = Positionⁱ (containerize C α d prev) s x in unfold⁺ rs (<-wf rs) o (m o)
+extend {C = C} {α = α} mu _ (val (x , leastFP , _ , d , prev)) = ∃[ s ] ∀ {o} → let rs = Positionⁱ (containerize C α d prev) s x in unfold⁺ rs (<-wf rs) o (mu o)
+extend {C = C} {α = α} _ nu (val (x , greatestFP , _ , d , prev)) = ∃[ s ] ∀ {o} → let rs = Positionⁱ (containerize C α d prev) s x in unfold⁺ rs (<-wf rs) o (nu o)
 extend _ _ done = ⊤
 extend _ _ fail = ⊥
 
-record W {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} (_ : Maybe' (Program C α × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis (Shape C) (suc n) × Previous (Shape C) (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record M {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} (_ : Maybe' (Program C α × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis (Shape C) (suc n) × Previous (Shape C) (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record Mu {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} (_ : Maybe' (Program C α × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis (Shape C) (suc n) × Previous (Shape C) (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record Nu {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} (_ : Maybe' (Program C α × FixedPoint × ∃[ n ] Formulaᵈⁿᶠ-dis (Shape C) (suc n) × Previous (Shape C) (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 
-record W i where
+record Mu i where
   inductive
-  constructor wᶜ
+  constructor muᶜ
   field
-    In : extend W M i
+    mu : extend Mu Nu i
 
-record M i where
+record Nu i where
   coinductive
-  constructor mᶜ
+  constructor nuᶜ
   field
-    Ni : extend W M i
+    nu : extend Mu Nu i
 
 infix 25 _⊨ᵛ_
 
@@ -188,8 +188,8 @@ x ⊨ᵛ ⟨ af ⟩ᵈⁿᶠ v with free x
 x ⊨ᵛ [ af ]ᵈⁿᶠ v with free x
 ... | pure _ = ⊤
 ... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ᵛ v
-x ⊨ᵛ μᵈⁿᶠ d = W (val (x , leastFP , zero , d , 〔 leastFP , d 〕))
-x ⊨ᵛ νᵈⁿᶠ d = M (val (x , greatestFP , zero , d , 〔 greatestFP , d 〕))
+x ⊨ᵛ μᵈⁿᶠ d = Mu (val (x , leastFP , zero , d , 〔 leastFP , d 〕))
+x ⊨ᵛ νᵈⁿᶠ d = Nu (val (x , greatestFP , zero , d , 〔 greatestFP , d 〕))
 
 infix 25 _⊨ᶜ_
 

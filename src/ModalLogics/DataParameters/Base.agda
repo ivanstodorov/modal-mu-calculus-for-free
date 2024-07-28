@@ -187,9 +187,9 @@ containerize {ℓ₁ = ℓ₁} {x = X} {xs = Xs} C α d prev with containerize-d
     position m i done = apply m i λ { (val _) → res done ; done → res done ; fail → res fail }
     position m i fail = apply m i λ { (val _) → res fail ; done → res done ; fail → res fail }
 
-extend : {C : Container ℓₛ ℓₚ} → {X : Set ℓₓ} → {ℓ₁ : Level} → Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs)) → (Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs)) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))) → (Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs)) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))
-extend {ℓₛ = ℓₛ} {ℓₚ = ℓₚ} {ℓₓ = ℓₓ} {ℓ₁ = ℓ₁} (val inj₁ x) _ _ = Lift (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁)) x
-extend (val inj₂ (x , fp , _ , _ , _ , p , prev , args)) w m = apply-q (proj₂ (apply-p p args)) prev x (case fp of λ { leastFP → w ; greatestFP → m })
+extend : {C : Container ℓₛ ℓₚ} → {X : Set ℓₓ} → {ℓ₁ : Level} → (Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs)) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))) → (Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs)) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))) → Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs)) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))
+extend {ℓₛ = ℓₛ} {ℓₚ = ℓₚ} {ℓₓ = ℓₓ} {ℓ₁ = ℓ₁} _ _ (val inj₁ x) = Lift (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁)) x
+extend mu nu (val inj₂ (x , fp , _ , _ , _ , p , prev , args)) = apply-q (proj₂ (apply-p p args)) prev x (case fp of λ { leastFP → mu ; greatestFP → nu })
   where
   apply-q : {C : Container ℓₛ ℓₚ} → {X : Set ℓₓ} → {ℓ₁ : Level} → {n : ℕ} → {x : List (Set ℓ₁)} → {xs : Vec (List (Set ℓ₁)) n} → {αs : List (Set ℓ₁ ⊎ Set ℓ₁)} → Quantifiedᵈⁿᶠ (Shape C) ℓ₁ (x ∷ xs) αs → Previous (Shape C) ℓ₁ (x ∷ xs) → Program C X → (Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs)) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))) → Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))
   apply-q {C = C} {X = X} (formulaᵈⁿᶠ d) prev x f = ∃[ s ] ∀ {o} → let rs = Positionⁱ (containerize C X d prev) s x in unfold⁺ rs (<-wf rs) o (f o)
@@ -199,23 +199,23 @@ extend (val inj₂ (x , fp , _ , _ , _ , p , prev , args)) w m = apply-q (proj�
   apply-p : {S : Set ℓ} → {ℓ₁ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ₁)) n} → {αs₁ : List (Set ℓ₁)} → Parameterizedᵈⁿᶠ S ℓ₁ xs αs₁ → Arguments ℓ₁ αs₁ → ∃[ αs₂ ] Quantifiedᵈⁿᶠ S ℓ₁ xs αs₂
   apply-p (quantifiedᵈⁿᶠ_ {αs = αs} q) [] = αs , q
   apply-p (_ ↦ᵈⁿᶠ p) (a ∷ args) = apply-p (p a) args
-extend done _ _ = ⊤
-extend fail _ _ = ⊥
+extend _ _ done = ⊤
+extend _ _ fail = ⊥
 
-record W {C : Container ℓₛ ℓₚ} {X : Set ℓₓ} {ℓ₁ : Level} (_ : Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs))) : Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))
-record M {C : Container ℓₛ ℓₚ} {X : Set ℓₓ} {ℓ₁ : Level} (_ : Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs))) : Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))
+record Mu {C : Container ℓₛ ℓₚ} {X : Set ℓₓ} {ℓ₁ : Level} (_ : Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs))) : Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))
+record Nu {C : Container ℓₛ ℓₚ} {X : Set ℓₓ} {ℓ₁ : Level} (_ : Maybe' (Set ℓ₁ ⊎ Program C X × FixedPoint × ∃[ n ] ∃[ xs ] ∃[ αs ] (Parameterizedᵈⁿᶠ {n = suc n} (Shape C) ℓ₁ (αs ∷ xs) αs × Previous (Shape C) ℓ₁ (αs ∷ xs) × Arguments ℓ₁ αs))) : Set (ℓₛ ⊔ ℓₚ ⊔ ℓₓ ⊔ (sucˡ ℓ₁))
 
-record W i where
+record Mu i where
   inductive
-  constructor wᶜ
+  constructor muᶜ
   field
-    In : extend i W M
+    mu : extend Mu Nu i
 
-record M i where
+record Nu i where
   coinductive
-  constructor mᶜ
+  constructor nuᶜ
   field
-    Ni : extend i W M
+    nu : extend Mu Nu i
 
 infix 25 _⊨ᵛ_
 
@@ -229,8 +229,8 @@ x ⊨ᵛ ⟨ af ⟩ᵈⁿᶠ v with free x
 x ⊨ᵛ [ af ]ᵈⁿᶠ v with free x
 ... | pure _ = ⊤
 ... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ᵛ v
-x ⊨ᵛ μᵈⁿᶠ_．_ {αs = αs} p args = W (val inj₂ (x , leastFP , zero , [] , αs , p , 〔 leastFP , p 〕 , args))
-x ⊨ᵛ νᵈⁿᶠ_．_ {αs = αs} p args = M (val inj₂ (x , greatestFP , zero , [] , αs , p , 〔 greatestFP , p 〕 , args))
+x ⊨ᵛ μᵈⁿᶠ_．_ {αs = αs} p args = Mu (val inj₂ (x , leastFP , zero , [] , αs , p , 〔 leastFP , p 〕 , args))
+x ⊨ᵛ νᵈⁿᶠ_．_ {αs = αs} p args = Nu (val inj₂ (x , greatestFP , zero , [] , αs , p , 〔 greatestFP , p 〕 , args))
 
 infix 25 _⊨ᶜ_
 

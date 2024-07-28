@@ -14,7 +14,7 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit using () renaming (⊤ to ⊤₀; tt to tt₀)
 open import Data.Unit.Polymorphic using (tt)
 open import Level using (Level; 0ℓ; lift)
-open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifiedⁱ; Parameterizedⁱ; M; mᶜ; []; _∷_; _⊨_)
+open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifiedⁱ; Parameterizedⁱ; Nu; nuᶜ; []; _∷_; _⊨_)
 open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; RegularFormula)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 
@@ -25,7 +25,7 @@ open ℕ
 open Formulaⁱ
 open Quantifiedⁱ
 open Parameterizedⁱ
-open M
+open Nu
 open ActionFormula renaming (val_ to valᵃᶠ_; ∃〔_〕_ to ∃ᵃᶠ〔_〕_)
 open RegularFormula
 open _≡_
@@ -50,8 +50,8 @@ property₁ : Formula (Shape communicationEffect) 0ℓ []
 property₁ = formula ν ℕ ↦ (λ n → quantified formula [ actF ((∃ᵃᶠ〔 String 〕 λ x → act send x) ∪ act receive) ᶜ ] ref zero ． (n ∷ []) ∧ [ actF ∃ᵃᶠ〔 String 〕 (λ x → act send x) ] ref zero ． (suc n ∷ []) ∧ [ actF act receive ] (val (n > 0) ∧ ref zero ． (pred n ∷ []))) ． (zero ∷ [])
 
 proof₁ : (is : List String) → program is ⊨ property₁
-Ni (proof₁ []) = zero , (λ { refl → mᶜ tt }) , (λ { refl → mᶜ tt }) , (λ { refl → mᶜ tt }) , λ { refl → mᶜ tt }
-Ni (proof₁ (x ∷ is)) = zero , (λ h → ⊥₀-elim (h (inj₁ (x , lift refl)))) , (λ { _ _ refl → mᶜ (zero , (λ h → ⊥₀-elim (h (inj₂ (lift refl)))) , (λ ()) , (λ { _ _ refl → mᶜ (lift (s≤s z≤n)) }) , (λ { _ _ refl → proof₁ is })) }) , (λ ()) , λ ()
+nu (proof₁ []) = zero , (λ { refl → nuᶜ tt }) , (λ { refl → nuᶜ tt }) , (λ { refl → nuᶜ tt }) , λ { refl → nuᶜ tt }
+nu (proof₁ (x ∷ is)) = zero , (λ h → ⊥₀-elim (h (inj₁ (x , lift refl)))) , (λ { _ _ refl → nuᶜ (zero , (λ h → ⊥₀-elim (h (inj₂ (lift refl)))) , (λ ()) , (λ { _ _ refl → nuᶜ (lift (s≤s z≤n)) }) , (λ { _ _ refl → proof₁ is })) }) , (λ ()) , λ ()
 
 τ : Container 0ℓ 0ℓ
 Shape τ = ⊤₀

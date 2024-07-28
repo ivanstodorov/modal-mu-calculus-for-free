@@ -14,13 +14,13 @@ open import Data.Unit.Polymorphic using (tt)
 open import Examples.Programs.ATMs using (ATMˢ)
 open import Examples.Programs.ATMs-rec using (ATMˢ-rec)
 open import Examples.Programs.Effect using (effect⁺; IOShape)
-open import ModalLogics.FixedPoints.Base using (Formula; M; wᶜ; mᶜ; _⊨_)
+open import ModalLogics.FixedPoints.Base using (Formula; Nu; muᶜ; nuᶜ; _⊨_)
 open import Relation.Binary.PropositionalEquality using (refl)
 
 open ActionFormula
 open IOShape
 open Formula
-open M
+open Nu
 
 property₁ : Formula (Shape effect⁺)
 property₁ = μ "X" ． ref "X"
@@ -32,20 +32,20 @@ property₂ : Formula (Shape effect⁺)
 property₂ = ν "X" ． ref "X"
 
 proof₂ : ATMˢ ⊨ property₂
-Ni proof₂ = zero , λ { refl → proof₂ }
+nu proof₂ = zero , λ { refl → proof₂ }
 
 property₃ : Formula (Shape effect⁺)
 property₃ = μ "X" ． [ act inj getPIN effect⁺ ᶜ ] ref "X" ∧ ⟨ true ⟩ true
 
 proof₃ : ATMˢ ⊨ property₃
-proof₃ = wᶜ (zero , (λ h → ⊥₀-elim (h refl)) , tt , zero , λ { refl → wᶜ tt })
+proof₃ = muᶜ (zero , (λ h → ⊥₀-elim (h refl)) , tt , zero , λ { refl → muᶜ tt })
 
 property₄ : Formula (Shape effect⁺)
 property₄ = ν "X" ． [ true ] ref "X" ∧ ⟨ true ⟩ true
 
 proof₄ : ATMˢ ⊨ ~ property₄
-proof₄ = wᶜ (zero , tt , zero , λ { refl → wᶜ (zero , tt , false , λ { refl → wᶜ (suc zero , λ _ → ⊥₀-elim) }) })
+proof₄ = muᶜ (zero , tt , zero , λ { refl → muᶜ (zero , tt , false , λ { refl → muᶜ (suc zero , λ _ → ⊥₀-elim) }) })
 
 proof₅ : ATMˢ-rec ⊨ property₄
-Ni proof₅ = zero , (λ { _ _ refl → mᶜ (zero , (λ { _ false refl → proof₅
-                                                 ; _ true refl → mᶜ (zero , (λ { _ _ refl → proof₅ }) , tt , tt₀ , λ { refl → mᶜ tt }) }) , tt , true , λ { refl → mᶜ tt }) }) , tt , zero , λ { refl → mᶜ tt }
+nu proof₅ = zero , (λ { _ _ refl → nuᶜ (zero , (λ { _ false refl → proof₅
+                                                  ; _ true refl → nuᶜ (zero , (λ { _ _ refl → proof₅ }) , tt , tt₀ , λ { refl → nuᶜ tt }) }) , tt , true , λ { refl → nuᶜ tt }) }) , tt , zero , λ { refl → nuᶜ tt }

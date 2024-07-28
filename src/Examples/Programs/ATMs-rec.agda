@@ -6,11 +6,10 @@ open import Common.Program using (Program; free; impure; ⦗_⦘)
 open import Data.Bool using (false; true)
 open import Data.Product using (_,_)
 open import Data.Unit using (⊤)
-open import Examples.Programs.Effect using (effect⁺; IOShape; VerificationShape; ExceptionShape)
+open import Examples.Programs.Effect using (effect⁺; IOShape; VerificationShape)
 
 open IOShape
 open VerificationShape
-open ExceptionShape
 
 ATMˢ-rec : Program effect⁺ ⊤
 free ATMˢ-rec = impure (inj getPIN effect⁺ , λ where

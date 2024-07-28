@@ -76,26 +76,26 @@ record Containerⁱ (C : Container ℓ₁ ℓ₂) (α : Set ℓ₃) (n : ℕ) : 
 open Containerⁱ
 
 extend : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {n : ℕ} → Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n) → (Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → (Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) → Maybe' (Program C α × Fin (suc n)) → Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-extend xs w m (val (x , i)) with lookupᵛ xs i
-... | leastFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (w o)
-... | greatestFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (m o)
+extend xs mu nu (val (x , i)) with lookupᵛ xs i
+... | leastFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (mu o)
+... | greatestFP , (S ▷ P) = ∃[ s ] ∀ {o} → let rs = P s x in unfold⁺ rs (<-wf rs) o (nu o)
 extend _ _ _ done = ⊤
 extend _ _ _ fail = ⊥
 
-record W {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
-record M {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record Mu {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
+record Nu {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {n : ℕ} (_ : Vec (FixedPoint × Containerⁱ C α (suc n)) (suc n)) (_ : Maybe' (Program C α × Fin (suc n))) : Set (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)
 
-record W xs i where
+record Mu xs i where
   inductive
-  constructor wᶜ
+  constructor muᶜ
   field
-    In : extend xs (W xs) (M xs) i
+    mu : extend xs (Mu xs) (Nu xs) i
 
-record M xs i where
+record Nu xs i where
   coinductive
-  constructor mᶜ
+  constructor nuᶜ
   field
-    Ni : extend xs (W xs) (M xs) i
+    nu : extend xs (Mu xs) (Nu xs) i
 
 infix 60 refⁱ_
 infix 55 ~ⁱ_
@@ -335,8 +335,8 @@ x ⊨ⁱ fⁱ = x ⊨ᵈ f'→fᵈⁿᶠ (fⁱ→f' fⁱ)
   x ⊨ᵛ [ af ]ᵈⁿᶠ v with free x
   ... | pure _ = ⊤
   ... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ᵛ v
-  _⊨ᵛ_ {C = C} {α = α} x (μᵈⁿᶠ d) = W (proj₂ (containerize {n₁ = zero} C α leastFP d [])) (val (x , zero))
-  _⊨ᵛ_ {C = C} {α = α} x (νᵈⁿᶠ d) = M (proj₂ (containerize {n₁ = zero} C α greatestFP d [])) (val (x , zero))
+  _⊨ᵛ_ {C = C} {α = α} x (μᵈⁿᶠ d) = Mu (proj₂ (containerize {n₁ = zero} C α leastFP d [])) (val (x , zero))
+  _⊨ᵛ_ {C = C} {α = α} x (νᵈⁿᶠ d) = Nu (proj₂ (containerize {n₁ = zero} C α greatestFP d [])) (val (x , zero))
 
   infix 25 _⊨ᶜ_
 
