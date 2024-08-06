@@ -1,1 +1,1 @@
-# modal-logics-for-free
+# Modal μ-Calculus for Free

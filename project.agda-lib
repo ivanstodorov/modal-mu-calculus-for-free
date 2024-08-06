@@ -1,2 +1,2 @@
-depend: standard-library
+depend: standard-library-2.1
 include: src/
