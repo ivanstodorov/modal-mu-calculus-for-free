@@ -2,6 +2,7 @@
 module Examples.DataParameters where
 
 open import Common.Injectable using (inj)
+open import Common.RegularFormulasWithData using (ActionFormula; RegularFormula)
 open import Data.Bool using (Bool; T; not)
 open import Data.Container using (Shape)
 open import Data.Empty using () renaming (⊥-elim to ⊥₀-elim)
@@ -16,10 +17,11 @@ open import Examples.Programs.ATMs using (ATMˢ)
 open import Examples.Programs.Effect using (effect; effect⁺; EffectShape; IOShape; VerificationShape)
 open import Level using (0ℓ; lift)
 open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifiedⁱ; Parameterizedⁱ; Nu; nuᶜ; []; _∷_; _⊨_)
-open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; RegularFormula)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Relation.Nullary using (no; yes)
 
+open ActionFormula renaming (val_ to valᵃᶠ_; ∀〔_〕_ to ∀ᵃᶠ〔_〕_)
+open RegularFormula
 open Bool
 open EffectShape
 open IOShape
@@ -28,8 +30,6 @@ open Formulaⁱ
 open Quantifiedⁱ
 open Parameterizedⁱ
 open Nu
-open ActionFormula renaming (val_ to valᵃᶠ_; ∀〔_〕_ to ∀ᵃᶠ〔_〕_)
-open RegularFormula
 
 property₁ : Formula (Shape effect) 0ℓ []
 property₁ = formula ⟨ actF act getPIN ⟩ true

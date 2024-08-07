@@ -2,6 +2,7 @@
 module ModalLogics.DataParameters.Base where
 
 open import Common.Program using (Program; free; pure; impure)
+open import Common.RegularFormulasWithData using (ActionFormula; RegularFormula; _∈_)
 open import Data.Bool using (Bool; not; T)
 open import Data.Container using (Container)
 open import Data.Empty.Polymorphic using (⊥)
@@ -19,11 +20,11 @@ open import Data.Vec using (Vec; _++_) renaming (length to lengthᵛ; [_] to [_]
 open import Function using (case_of_)
 open import Induction.WellFounded using (WellFounded; Acc)
 open import Level using (Level; 0ℓ; _⊔_; Lift) renaming (suc to sucˡ)
-open import ModalLogics.DataParameters.RegularFormulas using (ActionFormula; RegularFormula; _∈_)
 open import Relation.Binary using (Rel)
 open import Relation.Binary.PropositionalEquality using (_≡_; inspect; subst; sym) renaming ([_] to [_]⁼)
 open import Relation.Nullary using (¬_; yes; no)
 
+open RegularFormula
 open Bool
 open Container
 open Fin
@@ -32,7 +33,6 @@ open ℕ
 open _⊎_
 open Vec
 open Acc
-open RegularFormula
 open _≡_
 
 private variable
