@@ -192,32 +192,6 @@ x ⊨ f = x ⊨' desugar f ⦗ [] ⦘
     where
     rf' = desugar-rf rf
 
-  negate : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → Formula' S ℓ xs → Formula' S ℓ xs
-
-  negate-p : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → {αs : List (Set ℓ)} → Parameterized' S ℓ xs αs → Parameterized' S ℓ xs αs
-  negate-p (formula f') = formula negate f'
-  negate-p (α ＝ a ↦ p') = α ＝ a ↦ (negate-p ∘ p')
-
-  negate true = false
-  negate false = true
-  negate (val x) = val (¬ x)
-  negate (f'₁ ∧ f'₂) = negate f'₁ ∨ negate f'₂
-  negate (f'₁ ∨ f'₂) = negate f'₁ ∧ negate f'₂
-  negate (∀⦗ α ⦘ f') = ∃⦗ α ⦘ (negate ∘ f')
-  negate (∃⦗ α ⦘ f') = ∀⦗ α ⦘ (negate ∘ f')
-  negate (⟨ af ⟩ f') = [ af ] negate f'
-  negate ([ af ] f') = ⟨ af ⟩ negate f'
-  negate (μ p') = ν negate-p p'
-  negate (ν p') = μ negate-p p'
-  negate ref i ⦗ args ⦘ = ref i ⦗ args ⦘
-
-  negate-helper : {α : Set ℓ₁} → {β : Set ℓ₂} → {γ : Set ℓ₃} → {δ : Set ℓ₄} → {n : ℕ} → (xs : Vec (α × β × γ) n) → (f : β → δ) → map (proj₂ ∘ proj₂) (map (map₂ (map₁ f)) xs) ≡ map (proj₂ ∘ proj₂) xs
-  negate-helper [] _ = refl
-  negate-helper ((a , b , c) ∷ xs) f = helper refl (negate-helper xs f)
-    where
-    helper : {ℓ : Level} → {α : Set ℓ} → {x y : α} → {n : ℕ} → {xs ys : Vec α n} → x ≡ y → xs ≡ ys → x ∷ xs ≡ y ∷ ys
-    helper {x = x} {y = y} {xs = xs} {ys = ys} fst snd = subst (λ a → x ∷ xs ≡ a ∷ ys) fst (subst (λ as → x ∷ xs ≡ x ∷ as) snd refl)
-
   ref⁺ : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → {x : List (Set ℓ)} → Formula' S ℓ xs → Formula' S ℓ (x ∷ xs)
   ref⁺ f' = ref⁺' {xs₁ = []} f'
     where
@@ -257,6 +231,27 @@ x ⊨ f = x ⊨' desugar f ⦗ [] ⦘
       hlookup _ (_ ∷ _) _ zero _ = refl
       hlookup x (_ ∷ xs₁) xs₂ (suc i) (s≤s h) = hlookup x xs₁ xs₂ i h
 
+  desugar-rfᵇ : {S : Set s} → {ℓ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ)) n} → RegularFormula' S ℓ → Formula' S ℓ xs → Formula' S ℓ xs
+  desugar-rfᵇ ε f' = f'
+  desugar-rfᵇ (actF af) f' = [ af ] f'
+  desugar-rfᵇ (rf'₁ · rf'₂) f' = desugar-rfᵇ rf'₁ (desugar-rfᵇ rf'₂ f')
+  desugar-rfᵇ (rf'₁ + rf'₂) f' = desugar-rfᵇ rf'₁ f' ∨ desugar-rfᵇ rf'₂ f'
+  desugar-rfᵇ (rf' *) f' = ν formula (desugar-rfᵇ rf' ref zero ⦗ [] ⦘ ∧ ref⁺ f')
+
+  desugar-rfᵈ : {S : Set s} → {ℓ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ)) n} → RegularFormula' S ℓ → Formula' S ℓ xs → Formula' S ℓ xs
+  desugar-rfᵈ ε f' = f'
+  desugar-rfᵈ (actF af) f' = ⟨ af ⟩ f'
+  desugar-rfᵈ (rf'₁ · rf'₂) f' = desugar-rfᵈ rf'₁ (desugar-rfᵈ rf'₂ f')
+  desugar-rfᵈ (rf'₁ + rf'₂) f' = desugar-rfᵈ rf'₁ f' ∨ desugar-rfᵈ rf'₂ f'
+  desugar-rfᵈ (rf' *) f' = μ formula (desugar-rfᵈ rf' ref zero ⦗ [] ⦘ ∨ ref⁺ f')
+
+  negate-helper : {α : Set ℓ₁} → {β : Set ℓ₂} → {γ : Set ℓ₃} → {δ : Set ℓ₄} → {n : ℕ} → (xs : Vec (α × β × γ) n) → (f : β → δ) → map (proj₂ ∘ proj₂) (map (map₂ (map₁ f)) xs) ≡ map (proj₂ ∘ proj₂) xs
+  negate-helper [] _ = refl
+  negate-helper ((a , b , c) ∷ xs) f = helper refl (negate-helper xs f)
+    where
+    helper : {ℓ : Level} → {α : Set ℓ} → {x y : α} → {n : ℕ} → {xs ys : Vec α n} → x ≡ y → xs ≡ ys → x ∷ xs ≡ y ∷ ys
+    helper {x = x} {y = y} {xs = xs} {ys = ys} fst snd = subst (λ a → x ∷ xs ≡ a ∷ ys) fst (subst (λ as → x ∷ xs ≡ x ∷ as) snd refl)
+
   ref-helper : {ℓ : Level} → {n : ℕ} → {i : Fin n} → {b : Bool} → {αs : List (Set ℓ)} → (xs : Vec (String × Bool × List (Set ℓ)) n) → (x : String) → find xs x _≟_ ≡ just (i , b , αs) → αs ≡ lookupᵛ (map (proj₂ ∘ proj₂) xs) i
   ref-helper ((x₁ , _ , _) ∷ xs) x h with x₁ ≟ x
   ref-helper ((x₁ , _ , _) ∷ xs) .x₁ refl | yes refl = refl
@@ -270,31 +265,39 @@ x ⊨ f = x ⊨' desugar f ⦗ [] ⦘
   desugar-p (formula fⁱ) = formula desugar fⁱ
   desugar-p (α ＝ a ↦ pⁱ) = α ＝ a ↦ (desugar-p ∘ pⁱ)
 
+  negate : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (String × Bool × List (Set ℓ)) n} → Formulaⁱ S ℓ xs → Formula' S ℓ (map (proj₂ ∘ proj₂) xs)
+
+  negate-p : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (String × Bool × List (Set ℓ)) n} → {αs : List (Set ℓ)} → Parameterizedⁱ S ℓ xs αs → Parameterized' S ℓ (map (proj₂ ∘ proj₂) xs) αs
+  negate-p (formula fⁱ) = formula negate fⁱ
+  negate-p (α ＝ a ↦ pⁱ) = α ＝ a ↦ (negate-p ∘ pⁱ)
+
+  negate true = false
+  negate false = true
+  negate (val x) = val (¬ x)
+  negate {S = S} {ℓ = ℓ} {xs = xs} (~ fⁱ) = subst (Formula' S ℓ) (negate-helper xs not) (desugar fⁱ)
+  negate (fⁱ₁ ∧ fⁱ₂) = negate fⁱ₁ ∨ negate fⁱ₂
+  negate (fⁱ₁ ∨ fⁱ₂) = negate fⁱ₁ ∧ negate fⁱ₂
+  negate {S = S} {ℓ = ℓ} {xs = xs} (fⁱ₁ ⇒ fⁱ₂) = subst (Formula' S ℓ) (negate-helper xs not) (desugar fⁱ₁) ∧ negate fⁱ₂
+  negate (∀⦗ α ⦘ fⁱ) = ∃⦗ α ⦘ (negate ∘ fⁱ)
+  negate (∃⦗ α ⦘ fⁱ) = ∀⦗ α ⦘ (negate ∘ fⁱ)
+  negate (⟨ rf ⟩ fⁱ) = desugar-rfᵇ (desugar-rf rf) (negate fⁱ)
+  negate ([ rf ] fⁱ) = desugar-rfᵈ (desugar-rf rf) (negate fⁱ)
+  negate (μ name ． pⁱ) = ν negate-p pⁱ
+  negate (ν name ． pⁱ) = μ negate-p pⁱ
+  negate {ℓ = ℓ} {xs = xs} ref name ⦗ args ⦘ with find xs name _≟_ | inspect (find xs name) _≟_
+  ... | just (i , true , αs) | [ eq ]⁼ = ref i ⦗ subst (Arguments ℓ) (ref-helper xs name eq) args ⦘
+
   desugar true = true
   desugar false = false
   desugar (val x) = val x
-  desugar {S = S} {ℓ = ℓ} {xs = xs} (~ fⁱ) = subst (Formula' S ℓ) (negate-helper xs not) (negate (desugar fⁱ))
+  desugar {S = S} {ℓ = ℓ} {xs = xs} (~ fⁱ) = subst (Formula' S ℓ) (negate-helper xs not) (negate fⁱ)
   desugar (fⁱ₁ ∧ fⁱ₂) = desugar fⁱ₁ ∧ desugar fⁱ₂
   desugar (fⁱ₁ ∨ fⁱ₂) = desugar fⁱ₁ ∨ desugar fⁱ₂
-  desugar {S = S} {ℓ = ℓ} {xs = xs} (fⁱ₁ ⇒ fⁱ₂) = subst (Formula' S ℓ) (negate-helper xs not) (negate (desugar fⁱ₁)) ∨ desugar fⁱ₂
+  desugar {S = S} {ℓ = ℓ} {xs = xs} (fⁱ₁ ⇒ fⁱ₂) =  subst (Formula' S ℓ) (negate-helper xs not) (negate fⁱ₁) ∨ desugar fⁱ₂
   desugar (∀⦗ α ⦘ fⁱ) = ∀⦗ α ⦘ (desugar ∘ fⁱ)
   desugar (∃⦗ α ⦘ fⁱ) = ∃⦗ α ⦘ (desugar ∘ fⁱ)
   desugar (⟨ rf ⟩ fⁱ) = desugar-rfᵈ (desugar-rf rf) (desugar fⁱ)
-    where
-    desugar-rfᵈ : {S : Set s} → {ℓ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ)) n} → RegularFormula' S ℓ → Formula' S ℓ xs → Formula' S ℓ xs
-    desugar-rfᵈ ε f' = f'
-    desugar-rfᵈ (actF af) f' = ⟨ af ⟩ f'
-    desugar-rfᵈ (rf'₁ · rf'₂) f' = desugar-rfᵈ rf'₁ (desugar-rfᵈ rf'₂ f')
-    desugar-rfᵈ (rf'₁ + rf'₂) f' = desugar-rfᵈ rf'₁ f' ∨ desugar-rfᵈ rf'₂ f'
-    desugar-rfᵈ (rf' *) f' = μ formula (desugar-rfᵈ rf' ref zero ⦗ [] ⦘ ∨ ref⁺ f')
   desugar ([ rf ] fⁱ) = desugar-rfᵇ (desugar-rf rf) (desugar fⁱ)
-    where
-    desugar-rfᵇ : {S : Set s} → {ℓ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ)) n} → RegularFormula' S ℓ → Formula' S ℓ xs → Formula' S ℓ xs
-    desugar-rfᵇ ε f' = f'
-    desugar-rfᵇ (actF af) f' = [ af ] f'
-    desugar-rfᵇ (rf'₁ · rf'₂) f' = desugar-rfᵇ rf'₁ (desugar-rfᵇ rf'₂ f')
-    desugar-rfᵇ (rf'₁ + rf'₂) f' = desugar-rfᵇ rf'₁ f' ∨ desugar-rfᵇ rf'₂ f'
-    desugar-rfᵇ (rf' *) f' = ν formula (desugar-rfᵇ rf' ref zero ⦗ [] ⦘ ∧ ref⁺ f')
   desugar (μ name ． pⁱ) = μ desugar-p pⁱ
   desugar (ν name ． pⁱ) = ν desugar-p pⁱ
   desugar {ℓ = ℓ} {xs = xs} ref name ⦗ args ⦘ with find xs name _≟_ | inspect (find xs name) _≟_

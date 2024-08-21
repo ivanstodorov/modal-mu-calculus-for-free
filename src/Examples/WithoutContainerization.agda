@@ -20,7 +20,7 @@ open import ModalLogics.WithoutContainerization.Base using (Formula; Formulaⁱ;
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Relation.Nullary using (no; yes)
 
-open ActionFormula renaming (val_ to valᵃᶠ_)
+open ActionFormula renaming (∀⦗_⦘_ to ∀ᵃᶠ⦗_⦘_; val_ to valᵃᶠ_)
 open RegularFormula
 open Bool
 open IOShape

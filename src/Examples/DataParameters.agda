@@ -20,7 +20,7 @@ open import ModalLogics.DataParameters.Base using (Formula; Formulaⁱ; Quantifi
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Relation.Nullary using (no; yes)
 
-open ActionFormula renaming (val_ to valᵃᶠ_; ∀〔_〕_ to ∀ᵃᶠ〔_〕_)
+open ActionFormula renaming (val_ to valᵃᶠ_; ∀⦗_⦘_ to ∀ᵃᶠ⦗_⦘_)
 open RegularFormula
 open Bool
 open EffectShape
