@@ -351,6 +351,15 @@ falseᶜ⇔true {ℓ = ℓ} s = falseᶜ→true {ℓ = ℓ} s , true→falseᶜ 
   |α₁ᶜ|∪|α₂ᶜ|→|α₁∩α₂|ᶜ _ _ _ (inj₁ hn₁) (h₁ , _) = hn₁ h₁
   |α₁ᶜ|∪|α₂ᶜ|→|α₁∩α₂|ᶜ _ _ _ (inj₂ hn₂) (_ , h₂) = hn₂ h₂
 
+|∃d:D．A|d||ᶜ⇔∀d:D．|A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ (∃ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ ⇔ s ∈ ∀ᵃᶠ⦗ D ⦘ λ d → α d ᶜ
+|∃d:D．A|d||ᶜ⇔∀d:D．|A|d||ᶜ s D α = |∃d:D．A|d||ᶜ→∀d:D．|A|d||ᶜ s D α , ∀d:D．|A|d||ᶜ→|∃d:D．A|d||ᶜ s D α
+  where
+  |∃d:D．A|d||ᶜ→∀d:D．|A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ (∃ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ → s ∈ ∀ᵃᶠ⦗ D ⦘ λ d → α d ᶜ
+  |∃d:D．A|d||ᶜ→∀d:D．|A|d||ᶜ _ _ _ hn∃ d h = hn∃ (d , h)
+
+  ∀d:D．|A|d||ᶜ→|∃d:D．A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ ∀ᵃᶠ⦗ D ⦘ (λ d → α d ᶜ) → s ∈ (∃ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ
+  ∀d:D．|A|d||ᶜ→|∃d:D．A|d||ᶜ _ _ _ h∀ (d , h) = (h∀ d) h
+
 |∀d:D．A|d||ᶜ⇔∃d:D．|A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ (∀ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ ⇔ s ∈ ∃ᵃᶠ⦗ D ⦘ λ d → α d ᶜ
 |∀d:D．A|d||ᶜ⇔∃d:D．|A|d||ᶜ s D α = |∀d:D．A|d||ᶜ→∃d:D．|A|d||ᶜ s D α , ∃d:D．|A|d||ᶜ→|∀d:D．A|d||ᶜ s D α
   where
@@ -363,16 +372,48 @@ falseᶜ⇔true {ℓ = ℓ} s = falseᶜ→true {ℓ = ℓ} s , true→falseᶜ 
   ∃d:D．|A|d||ᶜ→|∀d:D．A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ ∃ᵃᶠ⦗ D ⦘ (λ d → α d ᶜ) → s ∈ (∀ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ
   ∃d:D．|A|d||ᶜ→|∀d:D．A|d||ᶜ _ _ _ (d , hn) h = hn (h d)
 
-|∃d:D．A|d||ᶜ⇔∀d:D．|A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ (∃ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ ⇔ s ∈ ∀ᵃᶠ⦗ D ⦘ λ d → α d ᶜ
-|∃d:D．A|d||ᶜ⇔∀d:D．|A|d||ᶜ s D α = |∃d:D．A|d||ᶜ→∀d:D．|A|d||ᶜ s D α , ∀d:D．|A|d||ᶜ→|∃d:D．A|d||ᶜ s D α
-  where
-  |∃d:D．A|d||ᶜ→∀d:D．|A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ (∃ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ → s ∈ ∀ᵃᶠ⦗ D ⦘ λ d → α d ᶜ
-  |∃d:D．A|d||ᶜ→∀d:D．|A|d||ᶜ _ _ _ hn∃ d h = hn∃ (d , h)
-
-  ∀d:D．|A|d||ᶜ→|∃d:D．A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ ∀ᵃᶠ⦗ D ⦘ (λ d → α d ᶜ) → s ∈ (∃ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ
-  ∀d:D．|A|d||ᶜ→|∃d:D．A|d||ᶜ _ _ _ h∀ (d , h) = (h∀ d) h
-
 -- Hennessy-Milner Logic
+
+-- Theorems for ⟨_⟩_
+
+~⟨a⟩φ⇔[a]~φ : (x : Program C α) → (a : Shape C) → (f : Formula (Shape C) ℓ) → x ⊨ ~ (⟨ actF act a ⟩ f) ⇔ x ⊨ [ actF act a ] ~ f
+~⟨a⟩φ⇔[a]~φ x a f = ~⟨a⟩φ→[a]~φ x a f , [a]~φ→~⟨a⟩φ x a f
+  where
+  ~⟨a⟩φ→[a]~φ : (x : Program C α) → (a : Shape C) → (f : Formula (Shape C) ℓ) → x ⊨ ~ (⟨ actF act a ⟩ f) → x ⊨ [ actF act a ] ~ f
+  ~⟨a⟩φ→[a]~φ _ _ _ h = h
+
+  [a]~φ→~⟨a⟩φ : (x : Program C α) → (a : Shape C) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF act a ] ~ f → x ⊨ ~ (⟨ actF act a ⟩ f)
+  [a]~φ→~⟨a⟩φ _ _ _ h = h
+
+[a]false⇔false : (x : Program C α) → (a : Shape C) → x ⊨ ⟨ actF act a ⟩ false {ℓ = ℓ} ⇔ x ⊨ false {ℓ = ℓ}
+[a]false⇔false x a = [a]false→false x a , false→[a]false x a
+  where
+  [a]false→false : (x : Program C α) → (a : Shape C) → x ⊨ ⟨ actF act a ⟩ false {ℓ = ℓ} → x ⊨ false {ℓ = ℓ}
+  [a]false→false x _ h with free x
+  [a]false→false x _ () | pure _
+  [a]false→false x _ () | impure (s , c)
+
+  false→[a]false : (x : Program C α) → (a : Shape C) → x ⊨ false {ℓ = ℓ} → x ⊨ ⟨ actF act a ⟩ false {ℓ = ℓ}
+  false→[a]false _ _ ()
+
+⟨a⟩|φ∨ψ|⇔⟨a⟩φ∨⟨a⟩ψ : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ (f₁ ∨ f₂) ⇔ x ⊨ ⟨ actF act a ⟩ f₁ ∨ ⟨ actF act a ⟩ f₂
+⟨a⟩|φ∨ψ|⇔⟨a⟩φ∨⟨a⟩ψ x a f₁ f₂ = ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x a f₁ f₂ , ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x a f₁ f₂
+  where
+  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ (f₁ ∨ f₂) → x ⊨ ⟨ actF act a ⟩ f₁ ∨ ⟨ actF act a ⟩ f₂
+  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x _ _ _ h with free x
+  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x _ _ _ (lift refl , r , inj₁ h₁) | impure _ = inj₁ (lift refl , r , h₁)
+  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x _ _ _ (lift refl , r , inj₂ h₂) | impure _ = inj₂ (lift refl , r , h₂)
+
+  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ f₁ ∨ ⟨ actF act a ⟩ f₂ → x ⊨ ⟨ actF act a ⟩ (f₁ ∨ f₂)
+  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ h with free x
+  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₁ ()) | pure _
+  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₂ ()) | pure _
+  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₁ (lift refl , r , h₁)) | impure _ = lift refl , r , inj₁ h₁
+  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₂ (lift refl , r , h₂)) | impure _ = lift refl , r , inj₂ h₂
+
+⟨a⟩φ∧[a]ψ→⟨a⟩|φ∧ψ| : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ f₁ ∧ [ actF act a ] f₂ → x ⊨ ⟨ actF act a ⟩ (f₁ ∧ f₂)
+⟨a⟩φ∧[a]ψ→⟨a⟩|φ∧ψ| x _ _ _ h with free x
+⟨a⟩φ∧[a]ψ→⟨a⟩|φ∧ψ| x _ _ _ ((lift refl , r , h₁) , h₂) | impure _ = lift refl , r , h₁ , h₂ (lift refl) r
 
 -- Theorems for [_]_
 
@@ -419,43 +460,196 @@ falseᶜ⇔true {ℓ = ℓ} s = falseᶜ→true {ℓ = ℓ} s , true→falseᶜ 
 ...     | impure _ = ⊥₀-elim (hn₂ λ { (lift refl) r → case h (lift refl) r of λ { (inj₁ h₁) → ⊥₀-elim (hn₁ (lift refl , r , h₁))
                                                                                 ; (inj₂ h₂) → h₂ } })
 
+-- Fixed point equations
+
+-- μX．φ→νX．φ
+
+-- Theorems for μ_．_
+
+-- μX．X⇔false
+
+-- μX．⟨R⟩X⇔false
+
+-- Theorems for ν_．_
+
+-- νX．X⇔true
+
+-- νX．[R]X⇔true
+
+-- RegularFormulas
+
 -- Theorems for ⟨_⟩_
 
-~⟨a⟩φ⇔[a]~φ : (x : Program C α) → (a : Shape C) → (f : Formula (Shape C) ℓ) → x ⊨ ~ (⟨ actF act a ⟩ f) ⇔ x ⊨ [ actF act a ] ~ f
-~⟨a⟩φ⇔[a]~φ x a f = ~⟨a⟩φ→[a]~φ x a f , [a]~φ→~⟨a⟩φ x a f
+⟨ε⟩φ⇔φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ ε ⟩ f ⇔ x ⊨ f
+⟨ε⟩φ⇔φ x f = ⟨ε⟩φ→φ x f , φ→⟨ε⟩φ x f
   where
-  ~⟨a⟩φ→[a]~φ : (x : Program C α) → (a : Shape C) → (f : Formula (Shape C) ℓ) → x ⊨ ~ (⟨ actF act a ⟩ f) → x ⊨ [ actF act a ] ~ f
-  ~⟨a⟩φ→[a]~φ _ _ _ h = h
+  ⟨ε⟩φ→φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ ε ⟩ f → x ⊨ f
+  ⟨ε⟩φ→φ _ _ h = h
 
-  [a]~φ→~⟨a⟩φ : (x : Program C α) → (a : Shape C) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF act a ] ~ f → x ⊨ ~ (⟨ actF act a ⟩ f)
-  [a]~φ→~⟨a⟩φ _ _ _ h = h
+  φ→⟨ε⟩φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ f → x ⊨ ⟨ ε ⟩ f
+  φ→⟨ε⟩φ _ _ h = h
 
-[a]false⇔false : (x : Program C α) → (a : Shape C) → x ⊨ ⟨ actF act a ⟩ false {ℓ = ℓ} ⇔ x ⊨ false {ℓ = ℓ}
-[a]false⇔false x a = [a]false→false x a , false→[a]false x a
+⟨false⟩φ⇔false : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF false ⟩ f ⇔ x ⊨ false {ℓ = ℓ}
+⟨false⟩φ⇔false x f = ⟨false⟩φ→false x f , false→⟨false⟩φ x f
   where
-  [a]false→false : (x : Program C α) → (a : Shape C) → x ⊨ ⟨ actF act a ⟩ false {ℓ = ℓ} → x ⊨ false {ℓ = ℓ}
-  [a]false→false x _ h with free x
-  [a]false→false x _ () | pure _
-  [a]false→false x _ () | impure (s , c)
+  ⟨false⟩φ→false : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF false ⟩ f → x ⊨ false {ℓ = ℓ}
+  ⟨false⟩φ→false x _ h with free x
+  ⟨false⟩φ→false x _ () | pure _
+  ⟨false⟩φ→false x _ () | impure _
 
-  false→[a]false : (x : Program C α) → (a : Shape C) → x ⊨ false {ℓ = ℓ} → x ⊨ ⟨ actF act a ⟩ false {ℓ = ℓ}
-  false→[a]false _ _ ()
+  false→⟨false⟩φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ false {ℓ = ℓ} → x ⊨ ⟨ actF false ⟩ f
+  false→⟨false⟩φ _ _ ()
 
-⟨a⟩|φ∨ψ|⇔⟨a⟩φ∨⟨a⟩ψ : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ (f₁ ∨ f₂) ⇔ x ⊨ ⟨ actF act a ⟩ f₁ ∨ ⟨ actF act a ⟩ f₂
-⟨a⟩|φ∨ψ|⇔⟨a⟩φ∨⟨a⟩ψ x a f₁ f₂ = ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x a f₁ f₂ , ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x a f₁ f₂
+⟨af₁∪af₂⟩φ⇔⟨af₁⟩φ∨⟨af₂⟩φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF af₁ ∪ af₂ ⟩ f ⇔ x ⊨ ⟨ actF af₁ ⟩ f ∨ ⟨ actF af₂ ⟩ f
+⟨af₁∪af₂⟩φ⇔⟨af₁⟩φ∨⟨af₂⟩φ x af₁ af₂ f = ⟨af₁∪af₂⟩φ→⟨af₁⟩φ∨⟨af₂⟩φ x af₁ af₂ f , ⟨af₁⟩φ∨⟨af₂⟩φ→⟨af₁∪af₂⟩φ x af₁ af₂ f
   where
-  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ (f₁ ∨ f₂) → x ⊨ ⟨ actF act a ⟩ f₁ ∨ ⟨ actF act a ⟩ f₂
-  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x _ _ _ h with free x
-  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x _ _ _ (lift refl , r , inj₁ h₁) | impure _ = inj₁ (lift refl , r , h₁)
-  ⟨a⟩|φ∨ψ|→⟨a⟩φ∨⟨a⟩ψ x _ _ _ (lift refl , r , inj₂ h₂) | impure _ = inj₂ (lift refl , r , h₂)
+  ⟨af₁∪af₂⟩φ→⟨af₁⟩φ∨⟨af₂⟩φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF af₁ ∪ af₂ ⟩ f → x ⊨ ⟨ actF af₁ ⟩ f ∨ ⟨ actF af₂ ⟩ f
+  ⟨af₁∪af₂⟩φ→⟨af₁⟩φ∨⟨af₂⟩φ x _ _ _ h with free x
+  ⟨af₁∪af₂⟩φ→⟨af₁⟩φ∨⟨af₂⟩φ x _ _ _ (inj₁ h∈₁ , r , h) | impure _ = inj₁ (h∈₁ , r , h)
+  ⟨af₁∪af₂⟩φ→⟨af₁⟩φ∨⟨af₂⟩φ x _ _ _ (inj₂ h∈₂ , r , h) | impure _ = inj₂ (h∈₂ , r , h)
 
-  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ f₁ ∨ ⟨ actF act a ⟩ f₂ → x ⊨ ⟨ actF act a ⟩ (f₁ ∨ f₂)
-  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ h with free x
-  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₁ ()) | pure _
-  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₂ ()) | pure _
-  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₁ (lift refl , r , h₁)) | impure _ = lift refl , r , inj₁ h₁
-  ⟨a⟩φ∨⟨a⟩ψ→⟨a⟩|φ∨ψ| x _ _ _ (inj₂ (lift refl , r , h₂)) | impure _ = lift refl , r , inj₂ h₂
+  ⟨af₁⟩φ∨⟨af₂⟩φ→⟨af₁∪af₂⟩φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF af₁ ⟩ f ∨ ⟨ actF af₂ ⟩ f → x ⊨ ⟨ actF af₁ ∪ af₂ ⟩ f
+  ⟨af₁⟩φ∨⟨af₂⟩φ→⟨af₁∪af₂⟩φ x _ _ _ h with free x
+  ⟨af₁⟩φ∨⟨af₂⟩φ→⟨af₁∪af₂⟩φ x _ _ _ (inj₁ ()) | pure _
+  ⟨af₁⟩φ∨⟨af₂⟩φ→⟨af₁∪af₂⟩φ x _ _ _ (inj₂ ()) | pure _
+  ⟨af₁⟩φ∨⟨af₂⟩φ→⟨af₁∪af₂⟩φ x _ _ _ (inj₁ (h∈₁ , r , h)) | impure _ = inj₁ h∈₁ , r , h
+  ⟨af₁⟩φ∨⟨af₂⟩φ→⟨af₁∪af₂⟩φ x _ _ _ (inj₂ (h∈₂ , r , h)) | impure _ = inj₂ h∈₂ , r , h
 
-⟨a⟩φ∧[a]ψ→⟨a⟩|φ∧ψ| : (x : Program C α) → (a : Shape C) → (f₁ f₂ : Formula (Shape C) ℓ) → x ⊨ ⟨ actF act a ⟩ f₁ ∧ [ actF act a ] f₂ → x ⊨ ⟨ actF act a ⟩ (f₁ ∧ f₂)
-⟨a⟩φ∧[a]ψ→⟨a⟩|φ∧ψ| x _ _ _ h with free x
-⟨a⟩φ∧[a]ψ→⟨a⟩|φ∧ψ| x _ _ _ ((lift refl , r , h₁) , h₂) | impure _ = lift refl , r , h₁ , h₂ (lift refl) r
+⟨af₁∩af₂⟩φ→⟨af₁⟩φ∧⟨af₂⟩φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF af₁ ∩ af₂ ⟩ f → x ⊨ ⟨ actF af₁ ⟩ f ∧ ⟨ actF af₂ ⟩ f
+⟨af₁∩af₂⟩φ→⟨af₁⟩φ∧⟨af₂⟩φ x _ _ _ h with free x
+⟨af₁∩af₂⟩φ→⟨af₁⟩φ∧⟨af₂⟩φ x _ _ _ ((h∈₁ , h∈₂) , r , h) | impure _ = (h∈₁ , r , h) , h∈₂ , r , h
+
+⟨∃d:D．AF|d|⟩φ⇔∃d:D．⟨AF|d|⟩φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF ∃ᵃᶠ⦗ D ⦘ (λ d → af d) ⟩ f ⇔ x ⊨ ∃ᶠ⦗ D ⦘ λ d → ⟨ actF af d ⟩ f
+⟨∃d:D．AF|d|⟩φ⇔∃d:D．⟨AF|d|⟩φ x D af f = ⟨∃d:D．AF|d|⟩φ→∃d:D．⟨AF|d|⟩φ x D af f , ∃d:D．⟨AF|d|⟩φ→⟨∃d:D．AF|d|⟩φ x D af f
+  where
+  ⟨∃d:D．AF|d|⟩φ→∃d:D．⟨AF|d|⟩φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF ∃ᵃᶠ⦗ D ⦘ (λ d → af d) ⟩ f → x ⊨ ∃ᶠ⦗ D ⦘ λ d → ⟨ actF af d ⟩ f
+  ⟨∃d:D．AF|d|⟩φ→∃d:D．⟨AF|d|⟩φ x _ _ _ h with free x
+  ⟨∃d:D．AF|d|⟩φ→∃d:D．⟨AF|d|⟩φ x _ _ _ ((d , h∈) , r , h) | impure _ = d , h∈ , r , h
+
+  ∃d:D．⟨AF|d|⟩φ→⟨∃d:D．AF|d|⟩φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ∃ᶠ⦗ D ⦘ (λ d → ⟨ actF af d ⟩ f) → x ⊨ ⟨ actF ∃ᵃᶠ⦗ D ⦘ (λ d → af d) ⟩ f
+  ∃d:D．⟨AF|d|⟩φ→⟨∃d:D．AF|d|⟩φ x _ _ _ h with free x
+  ∃d:D．⟨AF|d|⟩φ→⟨∃d:D．AF|d|⟩φ x _ _ _ (d , h∈ , r , h) | impure _ = (d , h∈) , r , h
+
+⟨∀d:D．AF|d|⟩φ→∀d:D．⟨AF|d|⟩φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ actF ∀ᵃᶠ⦗ D ⦘ (λ d → af d) ⟩ f → x ⊨ ∀ᶠ⦗ D ⦘ λ d → ⟨ actF af d ⟩ f
+⟨∀d:D．AF|d|⟩φ→∀d:D．⟨AF|d|⟩φ x _ _ _ h d with free x
+⟨∀d:D．AF|d|⟩φ→∀d:D．⟨AF|d|⟩φ x _ _ _ (h∈ , r , h) d | impure _ = h∈ d , r , h
+
+⟨R₁+R₂⟩φ⇔⟨R₁⟩φ∨⟨R₂⟩φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ R₁ + R₂ ⟩ f ⇔ x ⊨ ⟨ R₁ ⟩ f ∨ ⟨ R₂ ⟩ f
+⟨R₁+R₂⟩φ⇔⟨R₁⟩φ∨⟨R₂⟩φ x R₁ R₂ f = ⟨R₁+R₂⟩φ→⟨R₁⟩φ∨⟨R₂⟩φ x R₁ R₂ f , ⟨R₁⟩φ∨⟨R₂⟩φ→⟨R₁+R₂⟩φ x R₁ R₂ f
+  where
+  ⟨R₁+R₂⟩φ→⟨R₁⟩φ∨⟨R₂⟩φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ R₁ + R₂ ⟩ f → x ⊨ ⟨ R₁ ⟩ f ∨ ⟨ R₂ ⟩ f
+  ⟨R₁+R₂⟩φ→⟨R₁⟩φ∨⟨R₂⟩φ _ _ _ _ h = h
+
+  ⟨R₁⟩φ∨⟨R₂⟩φ→⟨R₁+R₂⟩φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ R₁ ⟩ f ∨ ⟨ R₂ ⟩ f → x ⊨ ⟨ R₁ + R₂ ⟩ f
+  ⟨R₁⟩φ∨⟨R₂⟩φ→⟨R₁+R₂⟩φ _ _ _ _ h = h
+
+-- ⟨R₁·R₂⟩φ⇔⟨R₁⟩⟨R₂⟩φ
+
+-- ⟨R*⟩φ⇔μX．|⟨R⟩X∨φ|
+
+-- ⟨R⁺⟩φ⇔⟨R⟩⟨R*⟩φ
+
+~⟨R⟩φ⇔[R]~φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ~ (⟨ R ⟩ f) ⇔ x ⊨ [ R ] ~ f
+~⟨R⟩φ⇔[R]~φ x R f = ~⟨R⟩φ→[R]~φ x R f , [R]~φ→~⟨R⟩φ x R f
+  where
+  ~⟨R⟩φ→[R]~φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ~ (⟨ R ⟩ f) → x ⊨ [ R ] ~ f
+  ~⟨R⟩φ→[R]~φ _ _ _ h = h
+
+  [R]~φ→~⟨R⟩φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ R ] ~ f → x ⊨ ~ (⟨ R ⟩ f)
+  [R]~φ→~⟨R⟩φ _ _ _ h = h
+
+-- ⟨R⟩false⇔false
+
+-- ⟨R⟩|φ∨ψ|⇔⟨R⟩φ∨⟨R⟩ψ
+
+-- ⟨R⟩φ∧[R]ψ→⟨R⟩|φ∧ψ|
+
+-- Theorems for [_]_
+
+[ε]φ⇔φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ [ ε ] f ⇔ x ⊨ f
+[ε]φ⇔φ x f = [ε]φ→φ x f , φ→[ε]φ x f
+  where
+  [ε]φ→φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ [ ε ] f → x ⊨ f
+  [ε]φ→φ _ _ h = h
+
+  φ→[ε]φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ f → x ⊨ [ ε ] f
+  φ→[ε]φ _ _ h = h
+
+[false]φ⇔true : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF false ] f ⇔ x ⊨ true {ℓ = ℓ}
+[false]φ⇔true x f = [false]φ→true x f , true→[false]φ x f
+  where
+  [false]φ→true : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF false ] f → x ⊨ true {ℓ = ℓ}
+  [false]φ→true _ _ _ = tt
+
+  true→[false]φ : (x : Program C α) → (f : Formula (Shape C) ℓ) → x ⊨ true {ℓ = ℓ} → x ⊨ [ actF false ] f
+  true→[false]φ x _ _ with free x
+  ... | pure _ = tt
+  ... | impure _ = λ ()
+
+[af₁∪af₂]φ⇔[af₁]φ∧[af₁]φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF af₁ ∪ af₂ ] f ⇔ x ⊨ [ actF af₁ ] f ∧ [ actF af₂ ] f
+[af₁∪af₂]φ⇔[af₁]φ∧[af₁]φ x af₁ af₂ f = [af₁∪af₂]φ→[af₁]φ∧[af₁]φ x af₁ af₂ f , [af₁]φ∧[af₁]φ→[af₁∪af₂]φ x af₁ af₂ f
+  where
+  [af₁∪af₂]φ→[af₁]φ∧[af₁]φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF af₁ ∪ af₂ ] f → x ⊨ [ actF af₁ ] f ∧ [ actF af₂ ] f
+  [af₁∪af₂]φ→[af₁]φ∧[af₁]φ x _ _ _ h with free x
+  ... | pure _ = tt , tt
+  ... | impure _ = (λ h∈₁ r → h (inj₁ h∈₁) r) , λ h∈₂ r → h (inj₂ h∈₂) r
+
+  [af₁]φ∧[af₁]φ→[af₁∪af₂]φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF af₁ ] f ∧ [ actF af₂ ] f → x ⊨ [ actF af₁ ∪ af₂ ] f
+  [af₁]φ∧[af₁]φ→[af₁∪af₂]φ x _ _ _ (h₁ , h₂) with free x
+  ... | pure _ = tt
+  ... | impure _ = λ { (inj₁ h∈₁) r → h₁ h∈₁ r
+                     ; (inj₂ h∈₂) r → h₂ h∈₂ r }
+
+[af₁]φ∨[af₂]φ→[af₁∩af₂]φ : (x : Program C α) → (af₁ af₂ : ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF af₁ ] f ∨ [ actF af₂ ] f → x ⊨ [ actF af₁ ∩ af₂ ] f
+[af₁]φ∨[af₂]φ→[af₁∩af₂]φ x _ _ _ h with free x
+... | pure _ = tt
+[af₁]φ∨[af₂]φ→[af₁∩af₂]φ x _ _ _ (inj₁ h₁) | impure _ = λ { (h∈₁ , _) r → h₁ h∈₁ r }
+[af₁]φ∨[af₂]φ→[af₁∩af₂]φ x _ _ _ (inj₂ h₂) | impure _ = λ { (_ , h∈₂) r → h₂ h∈₂ r }
+
+[∃d:D．AF|d|]φ⇔∀d:D．[AF|d|]φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF ∃ᵃᶠ⦗ D ⦘ (λ d → af d) ] f ⇔ x ⊨ ∀ᶠ⦗ D ⦘ λ d → [ actF af d ] f
+[∃d:D．AF|d|]φ⇔∀d:D．[AF|d|]φ x D af f = [∃d:D．AF|d|]φ→∀d:D．[AF|d|]φ x D af f , ∀d:D．[AF|d|]φ→[∃d:D．AF|d|]φ x D af f
+  where
+  [∃d:D．AF|d|]φ→∀d:D．[AF|d|]φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ actF ∃ᵃᶠ⦗ D ⦘ (λ d → af d) ] f → x ⊨ ∀ᶠ⦗ D ⦘ λ d → [ actF af d ] f
+  [∃d:D．AF|d|]φ→∀d:D．[AF|d|]φ x _ _ _ h d with free x
+  ... | pure _ = tt
+  ... | impure _ = λ h∈ r → h (d , h∈) r
+
+  ∀d:D．[AF|d|]φ→[∃d:D．AF|d|]φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ∀ᶠ⦗ D ⦘ (λ d → [ actF af d ] f) → x ⊨ [ actF ∃ᵃᶠ⦗ D ⦘ (λ d → af d) ] f
+  ∀d:D．[AF|d|]φ→[∃d:D．AF|d|]φ x _ _ _ h with free x
+  ... | pure _ = tt
+  ... | impure _ = λ { (d , h∈) r → h d h∈ r }
+
+∃d:D．[AF|d|]φ→[∀d:D．AF|d|]φ : (x : Program C α) → (D : Set ℓ) → (af : D → ActionFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ∃ᶠ⦗ D ⦘ (λ d → [ actF af d ] f) → x ⊨ [ actF ∀ᵃᶠ⦗ D ⦘ (λ d → af d) ] f
+∃d:D．[AF|d|]φ→[∀d:D．AF|d|]φ x _ _ _ h with free x
+... | pure _ = tt
+∃d:D．[AF|d|]φ→[∀d:D．AF|d|]φ x _ _ _ (d , h) | impure _ = λ h∈ r → h (h∈ d) r
+
+[R₁+R₂]φ⇔[R₁]φ∧[R₂]φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ R₁ + R₂ ] f ⇔ x ⊨ [ R₁ ] f ∧ [ R₂ ] f
+[R₁+R₂]φ⇔[R₁]φ∧[R₂]φ x R₁ R₂ f = [R₁+R₂]φ→[R₁]φ∧[R₂]φ x R₁ R₂ f , [R₁]φ∧[R₂]φ→[R₁+R₂]φ x R₁ R₂ f
+  where
+  [R₁+R₂]φ→[R₁]φ∧[R₂]φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ R₁ + R₂ ] f → x ⊨ [ R₁ ] f ∧ [ R₂ ] f
+  [R₁+R₂]φ→[R₁]φ∧[R₂]φ _ _ _ _ h = h
+
+  [R₁]φ∧[R₂]φ→[R₁+R₂]φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ R₁ ] f ∧ [ R₂ ] f → x ⊨ [ R₁ + R₂ ] f
+  [R₁]φ∧[R₂]φ→[R₁+R₂]φ _ _ _ _ h = h
+
+-- [R₁·R₂]φ⇔[R₁][R₂]φ
+
+-- [R*]φ⇔νX．|[R]X∧φ|
+
+-- [R⁺]φ⇔[R][R*]φ
+
+~[R]φ⇔⟨R⟩~φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ~ ([ R ] f) ⇔ x ⊨ ⟨ R ⟩ ~ f
+~[R]φ⇔⟨R⟩~φ x R f = ~[R]φ→⟨R⟩~φ x R f , ⟨R⟩~φ→~[R]φ x R f
+  where
+  ~[R]φ→⟨R⟩~φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ~ ([ R ] f) → x ⊨ ⟨ R ⟩ ~ f
+  ~[R]φ→⟨R⟩~φ _ _ _ h = h
+
+  ⟨R⟩~φ→~[R]φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ R ⟩ ~ f → x ⊨ ~ ([ R ] f)
+  ⟨R⟩~φ→~[R]φ _ _ _ h = h
+
+-- [R]true⇔true
+
+-- [R]|φ∧ψ|⇔[R]φ∧[R]ψ
+
+-- [R]|φ∨ψ|→⟨R⟩φ∨[R]ψ
