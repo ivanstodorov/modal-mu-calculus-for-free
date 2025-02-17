@@ -16,7 +16,7 @@ open import Examples.Programs.ATMs using (ATMˢ)
 open import Examples.Programs.ATMs-rec using (ATMˢ-rec)
 open import Examples.Programs.Effect using (effect⁺; IOShape; VerificationShape)
 open import Level using (Level; 0ℓ; lift)
-open import ModalLogics.WithoutContainerization.Base using (Formula; Formulaⁱ; Parameterizedⁱ; Arguments; Nu; nuᶜ; muᶜ; _⊨_)
+open import ModalLogics.WithoutContainerization.Base using (Formula; Formulaʳᶠ; Parameterizedʳᶠ; Arguments; Nu; nuᶜ; muᶜ; _⊨_)
 open import Relation.Binary.PropositionalEquality using (_≢_; refl)
 open import Relation.Nullary using (no; yes)
 
@@ -25,8 +25,8 @@ open RegularFormula
 open Bool
 open IOShape
 open VerificationShape
-open Formulaⁱ
-open Parameterizedⁱ
+open Formulaʳᶠ
+open Parameterizedʳᶠ
 open Arguments
 open Nu
 
