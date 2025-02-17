@@ -1,7 +1,6 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.WithoutContainerization.Base where
 
-open import Common.Biconditional using (_⇔_)
 open import Common.Program using (pure; impure; Program; free)
 open import Common.RegularFormulasWithData using (ActionFormula; RegularFormula; _∈_)
 open import Data.Bool using (Bool; not; T)
@@ -18,12 +17,12 @@ open import Data.Product using (_,_; _×_; map₁; map₂; proj₂; ∃-syntax; 
 open import Data.String using (String; _≟_)
 open import Data.Sum using (_⊎_)
 open import Data.Unit using () renaming (tt to tt₀)
-open import Data.Unit.Polymorphic using (⊤; tt)
+open import Data.Unit.Polymorphic using (⊤)
 open import Data.Vec using (fromList) renaming (lookup to lookupᵛ)
 open import Function using (case_of_; _∘_)
 open import Level using (Lift; Level; _⊔_) renaming (suc to sucˡ)
 open import Relation.Binary.Definitions using (DecidableEquality)
-open import Relation.Binary.PropositionalEquality using (_≡_; cong; cong₂; inspect; subst; sym; trans) renaming ([_] to [_]⁼)
+open import Relation.Binary.PropositionalEquality using (_≡_; subst; sym; inspect; trans; cong) renaming ([_] to [_]⁼)
 open import Relation.Nullary using (no; yes; ¬_)
 
 open RegularFormula
@@ -31,7 +30,6 @@ open Bool
 open Fin
 open List
 open Maybe
-open _⊎_
 open _≡_
 
 private variable
@@ -369,76 +367,3 @@ infix 25 _⊨_
 
 _⊨_ : {C : Container s p} → {R : Set r} → {ℓ : Level} → Program C R → Formula (Shape C) ℓ → Set (s ⊔ p ⊔ ℓ)
 x ⊨ f = x ⊨ʳᶠ f ⦗ [] ⦘
-
-
-
-open Mu
-open Nu
-
-h-at→af-∃ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (at₁ at₂ : ActionTree α ℓ) → (fᵃᶠ : Formulaᵃᶠ α ℓ prev) → at→af-∃ (concatenate at₁ at₂) fᵃᶠ ≡ at→af-∃ at₁ (at→af-∃ at₂ fᵃᶠ)
-h-at→af-∃ ⦗ ε ⦘ _ _ = refl
-h-at→af-∃ ⦗ actF _ ⦘ _ _ = refl
-h-at→af-∃ ⦗ _ * ⦘ _ _ = refl
-h-at→af-∃ (ε · at₁) at₂ fᵃᶠ = h-at→af-∃ at₁ at₂ fᵃᶠ
-h-at→af-∃ ((actF af) · at₁) at₂ fᵃᶠ = cong (⟨_⟩_ af) (h-at→af-∃ at₁ at₂ fᵃᶠ)
-h-at→af-∃ ((at₁ *) · at₂) at₃ fᵃᶠ = cong₂ (λ fᵃᶠ₁ fᵃᶠ₂ → μ (formula (fᵃᶠ₁ ∨ ref⁺ fᵃᶠ₂))) refl (h-at→af-∃ at₂ at₃ fᵃᶠ)
-h-at→af-∃ (at₁ + at₂) at₃ fᵃᶠ = cong₂ _∨_ (h-at→af-∃ at₁ at₃ fᵃᶠ) (h-at→af-∃ at₂ at₃ fᵃᶠ)
-
-h-concatenate-∃ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ ⟨ concatenate at₁ at₂ ⟩ fᵃᵗ ⦗ hist ⦘ ⇔ x ⊨ᵃᵗ ⟨ at₁ ⟩ ⟨ at₂ ⟩ fᵃᵗ ⦗ hist ⦘
-h-concatenate-∃ x at₁ at₂ fᵃᵗ hist = h-concatenate-∃ₗ x at₁ at₂ fᵃᵗ hist , h-concatenate-∃ᵣ x at₁ at₂ fᵃᵗ hist
-  where
-  h-concatenate-∃ₗ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ ⟨ concatenate at₁ at₂ ⟩ fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ ⟨ at₁ ⟩ ⟨ at₂ ⟩ fᵃᵗ ⦗ hist ⦘
-  h-concatenate-∃ₗ _ ⦗ ε ⦘ _ _ _ h = h
-  h-concatenate-∃ₗ _ ⦗ actF _ ⦘ _ _ _ h = h
-  h-concatenate-∃ₗ _ ⦗ _ * ⦘ _ _ _ h = h
-  h-concatenate-∃ₗ x (ε · at₁) at₂ fᵃᵗ hist h = h-concatenate-∃ₗ x at₁ at₂ fᵃᵗ hist h
-  h-concatenate-∃ₗ x ((actF af) · at₁) at₂ fᵃᵗ hist h with free x
-  h-concatenate-∃ₗ x ((actF af) · at₁) at₂ fᵃᵗ hist (h∈ , p , h) | impure (_ , c) = h∈ , p , h-concatenate-∃ₗ (c p) at₁ at₂ fᵃᵗ hist h
-  h-concatenate-∃ₗ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∃ at₁ ref zero ⦗ [] ⦘ ∨ ref⁺ fᵃᶠ in Mu x fᵃᶠ' ((false , formula transform-f fᵃᶠ') ∷ hist)) (h-at→af-∃ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ)) h
-  h-concatenate-∃ₗ x (at₁ + _) at₃ fᵃᵗ hist (inj₁ h) = inj₁ (h-concatenate-∃ₗ x at₁ at₃ fᵃᵗ hist h)
-  h-concatenate-∃ₗ x (_ + at₂) at₃ fᵃᵗ hist (inj₂ h) = inj₂ (h-concatenate-∃ₗ x at₂ at₃ fᵃᵗ hist h)
-
-  h-concatenate-∃ᵣ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ ⟨ at₁ ⟩ ⟨ at₂ ⟩ fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ ⟨ concatenate at₁ at₂ ⟩ fᵃᵗ ⦗ hist ⦘
-  h-concatenate-∃ᵣ _ ⦗ ε ⦘ _ _ _ h = h
-  h-concatenate-∃ᵣ _ ⦗ actF _ ⦘ _ _ _ h = h
-  h-concatenate-∃ᵣ _ ⦗ _ * ⦘ _ _ _ h = h
-  h-concatenate-∃ᵣ x (ε · at₁) at₂ fᵃᵗ hist h = h-concatenate-∃ᵣ x at₁ at₂ fᵃᵗ hist h
-  h-concatenate-∃ᵣ x ((actF af) · at₁) at₂ fᵃᵗ hist h with free x
-  h-concatenate-∃ᵣ x ((actF af) · at₁) at₂ fᵃᵗ hist (h∈ , p , h) | impure (_ , c) = h∈ , p , h-concatenate-∃ᵣ (c p) at₁ at₂ fᵃᵗ hist h
-  h-concatenate-∃ᵣ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∃ at₁ ref zero ⦗ [] ⦘ ∨ ref⁺ fᵃᶠ in Mu x fᵃᶠ' ((false , formula transform-f fᵃᶠ') ∷ hist)) (sym (h-at→af-∃ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ))) h
-  h-concatenate-∃ᵣ x (at₁ + _) at₃ fᵃᵗ hist (inj₁ h) = inj₁ (h-concatenate-∃ᵣ x at₁ at₃ fᵃᵗ hist h)
-  h-concatenate-∃ᵣ x (_ + at₂) at₃ fᵃᵗ hist (inj₂ h) = inj₂ (h-concatenate-∃ᵣ x at₂ at₃ fᵃᵗ hist h)
-
-h-at→af-∀ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (at₁ at₂ : ActionTree α ℓ) → (fᵃᶠ : Formulaᵃᶠ α ℓ prev) → at→af-∀ (concatenate at₁ at₂) fᵃᶠ ≡ at→af-∀ at₁ (at→af-∀ at₂ fᵃᶠ)
-h-at→af-∀ ⦗ ε ⦘ _ _ = refl
-h-at→af-∀ ⦗ actF _ ⦘ _ _ = refl
-h-at→af-∀ ⦗ _ * ⦘ _ _ = refl
-h-at→af-∀ (ε · at₁) at₂ fᵃᶠ = h-at→af-∀ at₁ at₂ fᵃᶠ
-h-at→af-∀ ((actF af) · at₁) at₂ fᵃᶠ = cong ([_]_ af) (h-at→af-∀ at₁ at₂ fᵃᶠ)
-h-at→af-∀ ((at₁ *) · at₂) at₃ fᵃᶠ = cong₂ (λ fᵃᶠ₁ fᵃᶠ₂ → ν (formula (fᵃᶠ₁ ∧ ref⁺ fᵃᶠ₂))) refl (h-at→af-∀ at₂ at₃ fᵃᶠ)
-h-at→af-∀ (at₁ + at₂) at₃ fᵃᶠ = cong₂ _∧_ (h-at→af-∀ at₁ at₃ fᵃᶠ) (h-at→af-∀ at₂ at₃ fᵃᶠ)
-
-h-concatenate-∀ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ [ concatenate at₁ at₂ ] fᵃᵗ ⦗ hist ⦘ ⇔ x ⊨ᵃᵗ [ at₁ ] [ at₂ ] fᵃᵗ ⦗ hist ⦘
-h-concatenate-∀ x at₁ at₂ fᵃᵗ hist = h-concatenate-∀ₗ x at₁ at₂ fᵃᵗ hist , h-concatenate-∀ᵣ x at₁ at₂ fᵃᵗ hist
-  where
-  h-concatenate-∀ₗ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ [ concatenate at₁ at₂ ] fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ [ at₁ ] [ at₂ ] fᵃᵗ ⦗ hist ⦘
-  h-concatenate-∀ₗ _ ⦗ ε ⦘ _ _ _ h = h
-  h-concatenate-∀ₗ _ ⦗ actF _ ⦘ _ _ _ h = h
-  h-concatenate-∀ₗ _ ⦗ _ * ⦘ _ _ _ h = h
-  h-concatenate-∀ₗ x (ε · at₁) at₂ fᵃᵗ hist h = h-concatenate-∀ₗ x at₁ at₂ fᵃᵗ hist h
-  h-concatenate-∀ₗ x ((actF _) · at₁) at₂ fᵃᵗ hist h with free x
-  ... | pure _ = tt
-  ... | impure (_ , c) = λ h∈ p → h-concatenate-∀ₗ (c p) at₁ at₂ fᵃᵗ hist (h h∈ p)
-  h-concatenate-∀ₗ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∀ at₁ ref zero ⦗ [] ⦘ ∧ ref⁺ fᵃᶠ in Nu x fᵃᶠ' ((true , formula transform-f fᵃᶠ') ∷ hist)) (h-at→af-∀ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ)) h
-  h-concatenate-∀ₗ x (at₁ + at₂) at₃ fᵃᵗ hist (h₁ , h₂) = h-concatenate-∀ₗ x at₁ at₃ fᵃᵗ hist h₁ , h-concatenate-∀ₗ x at₂ at₃ fᵃᵗ hist h₂
-
-  h-concatenate-∀ᵣ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ [ at₁ ] [ at₂ ] fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ [ concatenate at₁ at₂ ] fᵃᵗ ⦗ hist ⦘
-  h-concatenate-∀ᵣ _ ⦗ ε ⦘ _ _ _ h = h
-  h-concatenate-∀ᵣ _ ⦗ actF _ ⦘ _ _ _ h = h
-  h-concatenate-∀ᵣ _ ⦗ _ * ⦘ _ _ _ h = h
-  h-concatenate-∀ᵣ x (ε · at₂) at₃ fᵃᵗ hist h = h-concatenate-∀ᵣ x at₂ at₃ fᵃᵗ hist h
-  h-concatenate-∀ᵣ x ((actF _) · at₂) at₃ fᵃᵗ hist h with free x
-  ... | pure _ = tt
-  ... | impure (_ , c) = λ h∈ p → h-concatenate-∀ᵣ (c p) at₂ at₃ fᵃᵗ hist (h h∈ p)
-  h-concatenate-∀ᵣ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∀ at₁ ref zero ⦗ [] ⦘ ∧ ref⁺ fᵃᶠ in Nu x fᵃᶠ' ((true , formula transform-f fᵃᶠ') ∷ hist)) (sym (h-at→af-∀ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ))) h
-  h-concatenate-∀ᵣ x (at₁ + at₂) at₃ fᵃᵗ hist (h₁ , h₂) = h-concatenate-∀ᵣ x at₁ at₃ fᵃᵗ hist h₁ , h-concatenate-∀ᵣ x at₂ at₃ fᵃᵗ hist h₂
