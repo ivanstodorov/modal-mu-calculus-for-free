@@ -11,13 +11,16 @@ open import Data.Sum using (inj₁; inj₂)
 open import Data.Unit.Polymorphic using (tt)
 open import Function using (case_of_)
 open import Level using (Level; lift)
-open import ModalLogics.WithoutContainerization.Base using (Formula; Formulaⁱ; _⊨_)
+open import ModalLogics.WithoutContainerization.Base using (Formula; Formulaʳᶠ; Parameterizedʳᶠ; Arguments; History; _⊨_; h-concatenate-∃; h-concatenate-∀; rf→at; fʳᶠ→fᵃᵗ)
 open import Relation.Binary.PropositionalEquality using (refl)
 open import Relation.Nullary using (Dec; no; yes)
 
 open ActionFormula renaming (val_ to valᵃᶠ_; ∀⦗_⦘_ to ∀ᵃᶠ⦗_⦘_; ∃⦗_⦘_ to ∃ᵃᶠ⦗_⦘_)
 open RegularFormula
-open Formulaⁱ renaming (val_ to valᶠ_; ∀⦗_⦘_ to ∀ᶠ⦗_⦘_; ∃⦗_⦘_ to ∃ᶠ⦗_⦘_)
+open Formulaʳᶠ renaming (val_ to valᶠ_; ∀⦗_⦘_ to ∀ᶠ⦗_⦘_; ∃⦗_⦘_ to ∃ᶠ⦗_⦘_)
+open Parameterizedʳᶠ
+open Arguments
+open History
 
 private variable
   s ℓ ℓ₁ ℓ₂ ℓ₃ : Level
@@ -249,9 +252,9 @@ record Inhabited (α : Set ℓ) : Set ℓ where
   where
   ∀d:D．|Φ|d|∨ψ|→|∀d:D．Φ|d||∨ψ : (x : Program C α) → (D : Set ℓ) → (f₁ : D → Formula (Shape C) ℓ) → (f₂ : Formula (Shape C) ℓ) → x ⊨ ∀ᶠ⦗ D ⦘ (λ d → f₁ d ∨ f₂) → x ⊨ (∀ᶠ⦗ D ⦘ λ d → f₁ d) ∨ f₂
   ∀d:D．|Φ|d|∨ψ|→|∀d:D．Φ|d||∨ψ x _ _ f₂ h with ⊨-dec x f₂
-  ... | yes h₂ = inj₂ h₂
   ... | no hn₂ = inj₁ λ d → case h d of λ { (inj₁ h₁) → h₁
                                           ; (inj₂ h₂) → ⊥₀-elim (hn₂ h₂) }
+  ... | yes h₂ = inj₂ h₂
 
   |∀d:D．Φ|d||∨ψ→∀d:D．|Φ|d|∨ψ| : (x : Program C α) → (D : Set ℓ) → (f₁ : D → Formula (Shape C) ℓ) → (f₂ : Formula (Shape C) ℓ) → x ⊨ (∀ᶠ⦗ D ⦘ λ d → f₁ d) ∨ f₂ → x ⊨ ∀ᶠ⦗ D ⦘ (λ d → f₁ d ∨ f₂)
   |∀d:D．Φ|d||∨ψ→∀d:D．|Φ|d|∨ψ| _ _ _ _ (inj₁ h₁) d = inj₁ (h₁ d)
@@ -330,8 +333,8 @@ falseᶜ⇔true {ℓ = ℓ} s = falseᶜ→true {ℓ = ℓ} s , true→falseᶜ 
   |α₁∪α₂|ᶜ→|α₁ᶜ|∩|α₂ᶜ| s α₁ α₂ h with ∈-dec s α₁
   ... | yes h₁ = ⊥₀-elim (h (inj₁ h₁))
   ... | no hn₁ with ∈-dec s α₂
-  ...   | yes h₂ = ⊥₀-elim (h (inj₂ h₂))
   ...   | no hn₂ = hn₁ , hn₂
+  ...   | yes h₂ = ⊥₀-elim (h (inj₂ h₂))
 
   |α₁ᶜ|∩|α₂ᶜ|→|α₁∪α₂|ᶜ : (s : S) → (α₁ α₂ : ActionFormula S ℓ) → s ∈ (α₁ ᶜ) ∩ (α₂ ᶜ) → s ∈ (α₁ ∪ α₂) ᶜ
   |α₁ᶜ|∩|α₂ᶜ|→|α₁∪α₂|ᶜ _ _ _ (hn₁ , _) (inj₁ h₁) = hn₁ h₁
@@ -365,9 +368,9 @@ falseᶜ⇔true {ℓ = ℓ} s = falseᶜ→true {ℓ = ℓ} s , true→falseᶜ 
   where
   |∀d:D．A|d||ᶜ→∃d:D．|A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ (∀ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ → s ∈ ∃ᵃᶠ⦗ D ⦘ λ d → α d ᶜ
   |∀d:D．A|d||ᶜ→∃d:D．|A|d||ᶜ s D α hn∀ with ∈-dec s (∃ᵃᶠ⦗ D ⦘ λ d → α d ᶜ)
+  ... | no hn∃ = ⊥₀-elim (hn∀ λ d → case ∈-dec s (α d) of λ { (no hn) → ⊥₀-elim (hn∃ (d , hn))
+                                                            ; (yes h) → h })
   ... | yes h∃ = h∃
-  ... | no hn∃ = ⊥₀-elim (hn∀ λ d → case ∈-dec s (α d) of λ { (yes h) → h
-                                                            ; (no hn) → ⊥₀-elim (hn∃ (d , hn)) })
 
   ∃d:D．|A|d||ᶜ→|∀d:D．A|d||ᶜ : (s : S) → (D : Set ℓ) → (α : D → ActionFormula S ℓ) → s ∈ ∃ᵃᶠ⦗ D ⦘ (λ d → α d ᶜ) → s ∈ (∀ᵃᶠ⦗ D ⦘ λ d → α d) ᶜ
   ∃d:D．|A|d||ᶜ→|∀d:D．A|d||ᶜ _ _ _ (d , hn) h = hn (h d)
@@ -543,11 +546,13 @@ falseᶜ⇔true {ℓ = ℓ} s = falseᶜ→true {ℓ = ℓ} s , true→falseᶜ 
   ⟨R₁⟩φ∨⟨R₂⟩φ→⟨R₁+R₂⟩φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ R₁ ⟩ f ∨ ⟨ R₂ ⟩ f → x ⊨ ⟨ R₁ + R₂ ⟩ f
   ⟨R₁⟩φ∨⟨R₂⟩φ→⟨R₁+R₂⟩φ _ _ _ _ h = h
 
--- ⟨R₁·R₂⟩φ⇔⟨R₁⟩⟨R₂⟩φ
+⟨R₁·R₂⟩φ⇔⟨R₁⟩⟨R₂⟩φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ R₁ · R₂ ⟩ f ⇔ x ⊨ ⟨ R₁ ⟩ ⟨ R₂ ⟩ f
+⟨R₁·R₂⟩φ⇔⟨R₁⟩⟨R₂⟩φ x R₁ R₂ f = h-concatenate-∃ x (rf→at R₁) (rf→at R₂) (fʳᶠ→fᵃᵗ f) []
 
 -- ⟨R*⟩φ⇔μX．|⟨R⟩X∨φ|
 
--- ⟨R⁺⟩φ⇔⟨R⟩⟨R*⟩φ
+⟨R⁺⟩φ⇔⟨R⟩⟨R*⟩φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ⟨ R ⁺ ⟩ f ⇔ x ⊨ ⟨ R ⟩ ⟨ R * ⟩ f
+⟨R⁺⟩φ⇔⟨R⟩⟨R*⟩φ x R f = h-concatenate-∃ x (rf→at R) (rf→at (R *)) (fʳᶠ→fᵃᵗ f) []
 
 ~⟨R⟩φ⇔[R]~φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ~ (⟨ R ⟩ f) ⇔ x ⊨ [ R ] ~ f
 ~⟨R⟩φ⇔[R]~φ x R f = ~⟨R⟩φ→[R]~φ x R f , [R]~φ→~⟨R⟩φ x R f
@@ -633,11 +638,13 @@ falseᶜ⇔true {ℓ = ℓ} s = falseᶜ→true {ℓ = ℓ} s , true→falseᶜ 
   [R₁]φ∧[R₂]φ→[R₁+R₂]φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ R₁ ] f ∧ [ R₂ ] f → x ⊨ [ R₁ + R₂ ] f
   [R₁]φ∧[R₂]φ→[R₁+R₂]φ _ _ _ _ h = h
 
--- [R₁·R₂]φ⇔[R₁][R₂]φ
+[R₁·R₂]φ⇔[R₁][R₂]φ : (x : Program C α) → (R₁ R₂ : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ R₁ · R₂ ] f ⇔ x ⊨ [ R₁ ] [ R₂ ] f
+[R₁·R₂]φ⇔[R₁][R₂]φ x R₁ R₂ f = h-concatenate-∀ x (rf→at R₁) (rf→at R₂) (fʳᶠ→fᵃᵗ f) []
 
 -- [R*]φ⇔νX．|[R]X∧φ|
 
--- [R⁺]φ⇔[R][R*]φ
+[R⁺]φ⇔[R][R*]φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ [ R ⁺ ] f ⇔ x ⊨ [ R ] [ R * ] f
+[R⁺]φ⇔[R][R*]φ x R f = h-concatenate-∀ x (rf→at R) (rf→at (R *)) (fʳᶠ→fᵃᵗ f) []
 
 ~[R]φ⇔⟨R⟩~φ : (x : Program C α) → (R : RegularFormula (Shape C) ℓ) → (f : Formula (Shape C) ℓ) → x ⊨ ~ ([ R ] f) ⇔ x ⊨ ⟨ R ⟩ ~ f
 ~[R]φ⇔⟨R⟩~φ x R f = ~[R]φ→⟨R⟩~φ x R f , ⟨R⟩~φ→~[R]φ x R f

@@ -1,26 +1,29 @@
 {-# OPTIONS --without-K --safe --guardedness #-}
 module ModalLogics.WithoutContainerization.Base where
 
+open import Common.Biconditional using (_⇔_)
 open import Common.Program using (pure; impure; Program; free)
 open import Common.RegularFormulasWithData using (ActionFormula; RegularFormula; _∈_)
 open import Data.Bool using (Bool; not; T)
 open import Data.Container using (Container; Shape)
 open import Data.Empty.Polymorphic using (⊥)
-open import Data.Fin using (Fin; toℕ; cast; inject₁)
-open import Data.List using (List)
+open import Data.Fin using (Fin; cast; inject₁; toℕ)
+open import Data.Fin.Properties using (cast-is-id)
+open import Data.List using (List; length; map) renaming (_++_ to _++ˡ_)
+open import Data.List.Properties using (length-map; length-++; ++-assoc; ++-identityʳ)
 open import Data.Maybe using (Maybe)
-open import Data.Nat using (ℕ; suc; z≤n; s≤s; _≥_; _<_; _<ᵇ_) renaming (_+_ to _＋_)
+open import Data.Nat using (suc; s≤s; _≥_; _<_; _<ᵇ_)
 open import Data.Nat.Properties using (+-suc; ≮⇒≥; <⇒<ᵇ; <ᵇ⇒<)
 open import Data.Product using (_,_; _×_; map₁; map₂; proj₂; ∃-syntax; Σ-syntax)
 open import Data.String using (String; _≟_)
 open import Data.Sum using (_⊎_)
 open import Data.Unit using () renaming (tt to tt₀)
-open import Data.Unit.Polymorphic using (⊤)
-open import Data.Vec using (Vec; length; map; _++_) renaming (lookup to lookupᵛ)
+open import Data.Unit.Polymorphic using (⊤; tt)
+open import Data.Vec using (fromList) renaming (lookup to lookupᵛ)
 open import Function using (case_of_; _∘_)
 open import Level using (Lift; Level; _⊔_) renaming (suc to sucˡ)
 open import Relation.Binary.Definitions using (DecidableEquality)
-open import Relation.Binary.PropositionalEquality using (_≡_; subst; inspect; sym) renaming ([_] to [_]⁼)
+open import Relation.Binary.PropositionalEquality using (_≡_; cong; cong₂; inspect; subst; sym; trans) renaming ([_] to [_]⁼)
 open import Relation.Nullary using (no; yes; ¬_)
 
 open RegularFormula
@@ -28,197 +31,23 @@ open Bool
 open Fin
 open List
 open Maybe
-open Vec
+open _⊎_
 open _≡_
 
 private variable
-  s ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+  a s p r : Level
 
 data Arguments (ℓ : Level) : List (Set ℓ) → Set (sucˡ ℓ) where
   [] : Arguments ℓ []
-  _∷_ : ∀ {α αs} → α → Arguments ℓ αs → Arguments ℓ (α ∷ αs)
+  _∷_ : ∀ {T params} → T → Arguments ℓ params → Arguments ℓ (T ∷ params)
 
-module Aux where
-
-  data ActionTree (S : Set s) (ℓ : Level) : Set (s ⊔ sucˡ ℓ)
-
-  data ActionNode (S : Set s) (ℓ : Level) : Set (s ⊔ sucˡ ℓ) where
-    ε : ActionNode S ℓ
-    actF_ : ActionFormula S ℓ → ActionNode S ℓ
-    _* : ActionTree S ℓ → ActionNode S ℓ
-
-  data ActionTree S ℓ where
-    ⦗_⦘ : ActionNode S ℓ → ActionTree S ℓ
-    _·_ : ActionNode S ℓ → ActionTree S ℓ → ActionTree S ℓ
-    _+_ : ActionTree S ℓ → ActionTree S ℓ → ActionTree S ℓ
-
-  concatenate : {S : Set s} → {ℓ : Level} → ActionTree S ℓ → ActionTree S ℓ → ActionTree S ℓ
-  concatenate ⦗ x ⦘ at₂ = x · at₂
-  concatenate (x · at₁) at₂ = x · concatenate at₁ at₂
-  concatenate (at₁ + at₂) at₃ = concatenate at₁ at₃ + concatenate at₂ at₃
-
-  desugar-rf : {S : Set s} → {ℓ : Level} → RegularFormula S ℓ → ActionTree S ℓ
-  desugar-rf ε = ⦗ ε ⦘
-  desugar-rf (actF af) = ⦗ actF af ⦘
-  desugar-rf (rf₁ · rf₂) = concatenate (desugar-rf rf₁) (desugar-rf rf₂)
-  desugar-rf (rf₁ + rf₂) = desugar-rf rf₁ + desugar-rf rf₂
-  desugar-rf (rf *) = ⦗ desugar-rf rf * ⦘
-  desugar-rf (rf ⁺) = let at = desugar-rf rf in concatenate at ⦗ at * ⦘
-
-  infix 60 val_
-  infix 60 ref_⦗_⦘
-  infix 50 ⟨_⟩_
-  infix 50 [_]_
-  infixr 45 _∧_
-  infixr 40 _∨_
-  infix 30 ∀⦗_⦘_
-  infix 30 ∃⦗_⦘_
-  infix 30 μ_
-  infix 30 ν_
-
-  data Formula' {n : ℕ} (S : Set s) (ℓ : Level) : Vec (List (Set ℓ)) n → Set (s ⊔ sucˡ ℓ)
-
-  infix 70 formula_
-  infix 65 _＝_↦_
-
-  data Parameterized' {n : ℕ} (S : Set s) (ℓ : Level) (xs : Vec (List (Set ℓ)) n) : List (Set ℓ) → Set (s ⊔ (sucˡ ℓ)) where
-    formula_ : Formula' S ℓ xs → Parameterized' S ℓ xs []
-    _＝_↦_ : ∀ {αs} → (α : Set ℓ) → α → (α → Parameterized' S ℓ xs αs) → Parameterized' S ℓ xs (α ∷ αs)
-
-  data Formula' S ℓ where
-    true false : ∀ {xs} → Formula' S ℓ xs
-    val_ : ∀ {xs} → Set ℓ → Formula' S ℓ xs
-    _∧_ _∨_ : ∀ {xs} → Formula' S ℓ xs → Formula' S ℓ xs → Formula' S ℓ xs
-    ∀⦗_⦘_ ∃⦗_⦘_ : ∀ {xs} → (α : Set ℓ) → (α → Formula' S ℓ xs) → Formula' S ℓ xs
-    ⟨_⟩_ [_]_ : ∀ {xs} → ActionTree S ℓ → Formula' S ℓ xs → Formula' S ℓ xs
-    μ_ ν_ : ∀ {αs xs} → Parameterized' S ℓ (αs ∷ xs) αs → Formula' S ℓ xs
-    ref_⦗_⦘ : ∀ {xs} → (i : Fin (length xs)) → Arguments ℓ (lookupᵛ xs i) → Formula' S ℓ xs
-
-  applyᵈ : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → {αs : List (Set ℓ)} → Parameterized' S ℓ xs αs → Formula' S ℓ xs
-  applyᵈ (formula f') = f'
-  applyᵈ (_ ＝ a ↦ p') = applyᵈ (p' a)
-
-  apply : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → {αs : List (Set ℓ)} → Parameterized' S ℓ xs αs → Arguments ℓ αs → Formula' S ℓ xs
-  apply (formula f') _ = f'
-  apply (_ ＝ _ ↦ p') (a ∷ args) = apply (p' a) args
-
-  data Previous (S : Set s) (ℓ : Level) : {n : ℕ} → Vec (List (Set ℓ)) n → Set (s ⊔ (sucˡ ℓ)) where
-    [] : Previous S ℓ []
-    _∷_ : ∀ {αs : List (Set ℓ)} {n : ℕ} {xs : Vec (List (Set ℓ)) n} → Bool × Parameterized' S ℓ (αs ∷ xs) αs → Previous S ℓ xs → Previous S ℓ (αs ∷ xs)
-
-  lookup : {n₁ : ℕ} → {S : Set s} → {ℓ : Level} → {xs₁ : Vec (List (Set ℓ)) n₁} → Previous S ℓ xs₁ → (i : Fin n₁) → let αs = lookupᵛ xs₁ i in Bool × ∃[ n₂ ] Σ[ xs₂ ∈ Vec (List (Set ℓ)) n₂ ] Parameterized' S ℓ (αs ∷ xs₂) αs × Previous S ℓ (αs ∷ xs₂)
-  lookup {n₁ = suc n} {xs₁ = _ ∷ xs} prev@((fp , p') ∷ _) zero = fp , n , xs , p' , prev
-  lookup (_ ∷ prev) (suc i) = lookup prev i
-
-  ref⁺ : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (List (Set ℓ)) n} → {x : List (Set ℓ)} → Formula' S ℓ xs → Formula' S ℓ (x ∷ xs)
-  ref⁺ f' = ref⁺' {xs₁ = []} f'
-    where
-    ref⁺' : {n₁ n₂ : ℕ} → {S : Set s} → {ℓ : Level} → {xs₁ : Vec (List (Set ℓ)) n₁} → {xs₂ : Vec (List (Set ℓ)) n₂} → {x : List (Set ℓ)} → Formula' S ℓ (xs₁ ++ xs₂) → Formula' S ℓ (xs₁ ++ x ∷ xs₂)
-
-    ref⁺'-p : {n₁ n₂ : ℕ} → {S : Set s} → {ℓ : Level} → {xs₁ : Vec (List (Set ℓ)) n₁} → {xs₂ : Vec (List (Set ℓ)) n₂} → {αs : List (Set ℓ)} → {x : List (Set ℓ)} → Parameterized' S ℓ (xs₁ ++ xs₂) αs → Parameterized' S ℓ (xs₁ ++ x ∷ xs₂) αs
-    ref⁺'-p (formula f') = formula ref⁺' f'
-    ref⁺'-p (α ＝ a ↦ p') = α ＝ a ↦ (ref⁺'-p ∘ p')
-
-    ref⁺' true = true
-    ref⁺' false = false
-    ref⁺' (val x) = val x
-    ref⁺' (f'₁ ∧ f'₂) = ref⁺' f'₁ ∧ ref⁺' f'₂
-    ref⁺' (f'₁ ∨ f'₂) = ref⁺' f'₁ ∨ ref⁺' f'₂
-    ref⁺' (∀⦗ α ⦘ f') = ∀⦗ α ⦘ (ref⁺' ∘ f')
-    ref⁺' (∃⦗ α ⦘ f') = ∃⦗ α ⦘ (ref⁺' ∘ f')
-    ref⁺' (⟨ af ⟩ f') = ⟨ af ⟩ ref⁺' f'
-    ref⁺' ([ af ] f') = [ af ] ref⁺' f'
-    ref⁺' {xs₁ = xs₁} (μ_ {αs = αs} p') = μ_ (ref⁺'-p {xs₁ = αs ∷ xs₁} p')
-    ref⁺' {xs₁ = xs₁} (ν_ {αs = αs} p') = ν_ (ref⁺'-p {xs₁ = αs ∷ xs₁} p')
-    ref⁺' {n₁ = n₁} {ℓ = ℓ} {xs₁ = xs₁} {xs₂ = xs₂} {x = x} (ref i ⦗ args ⦘) with toℕ i <ᵇ n₁ | inspect (_<ᵇ_ (toℕ i)) n₁
-    ... | false | [ hn ]⁼ = ref i' i ⦗ subst (Arguments ℓ) (hlookup x xs₁ xs₂ i (≮⇒≥ λ h → subst T hn (<⇒<ᵇ h))) args ⦘
-      where
-      i' : {n₁ n₂ : ℕ} → Fin (n₁ ＋ n₂) → Fin (n₁ ＋ suc n₂)
-      i' {n₁ = n₁} {n₂ = n₂} i = cast (sym (+-suc n₁ n₂)) (suc i)
-
-      hlookup : {ℓ : Level} → {α : Set ℓ} → {n₁ n₂ : ℕ} → (x : α) → (xs₁ : Vec α n₁) → (xs₂ : Vec α n₂) → (i : Fin (n₁ ＋ n₂)) → toℕ i ≥ n₁ → lookupᵛ (xs₁ ++ xs₂) i ≡ lookupᵛ (xs₁ ++ x ∷ xs₂) (i' i)
-      hlookup _ [] _ zero _ = refl
-      hlookup x [] (_ ∷ xs₂) (suc i) z≤n = hlookup x [] xs₂ i z≤n
-      hlookup {ℓ = ℓ} x (_ ∷ xs₁) xs₂ (suc i) (s≤s h) = hlookup x xs₁ xs₂ i h
-    ... | true | [ h ]⁼ = ref i' i ⦗ subst (Arguments ℓ) (hlookup x xs₁ xs₂ i (<ᵇ⇒< (toℕ i) n₁ (subst T (sym h) tt₀))) args ⦘
-      where
-      i' : {n₁ n₂ : ℕ} → Fin (n₁ ＋ n₂) → Fin (n₁ ＋ suc n₂)
-      i' {n₁ = n₁} {n₂ = n₂} i = cast (sym (+-suc n₁ n₂)) (inject₁ i)
-
-      hlookup : {ℓ : Level} → {α : Set ℓ} → {n₁ n₂ : ℕ} → (x : α) → (xs₁ : Vec α n₁) → (xs₂ : Vec α n₂) → (i : Fin (n₁ ＋ n₂)) → toℕ i < n₁ → lookupᵛ (xs₁ ++ xs₂) i ≡ lookupᵛ (xs₁ ++ x ∷ xs₂) (i' i)
-      hlookup _ (_ ∷ _) _ zero _ = refl
-      hlookup x (_ ∷ xs₁) xs₂ (suc i) (s≤s h) = hlookup x xs₁ xs₂ i h
-
-  infix 25 _⊨'_⦗_⦘
-
-  _⊨'_⦗_⦘ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {ℓ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ)) n} → Program C α → Formula' (Shape C) ℓ xs → Previous (Shape C) ℓ xs → Set (ℓ ⊔ ℓ₁ ⊔ ℓ₂)
-
-  record Mu {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {ℓ : Level} {n : ℕ} {xs : Vec (List (Set ℓ)) n} (x : Program C α) (f : Formula' (Shape C) ℓ xs) (prev : Previous (Shape C) ℓ xs) : Set (ℓ ⊔ ℓ₁ ⊔ ℓ₂) where
-    inductive
-    constructor muᶜ
-    field
-      mu : x ⊨' f ⦗ prev ⦘
-
-  record Nu {C : Container ℓ₁ ℓ₂} {α : Set ℓ₃} {ℓ : Level} {n : ℕ} {xs : Vec (List (Set ℓ)) n} (x : Program C α) (f : Formula' (Shape C) ℓ xs) (prev : Previous (Shape C) ℓ xs) : Set (ℓ ⊔ ℓ₁ ⊔ ℓ₂) where
-    coinductive
-    constructor nuᶜ
-    field
-      nu : x ⊨' f ⦗ prev ⦘
-
-  _ ⊨' true ⦗ _ ⦘ = ⊤
-  _ ⊨' false ⦗ _ ⦘ = ⊥
-  _⊨'_⦗_⦘ {ℓ₁ = ℓ₁} {ℓ₂ = ℓ₂} {ℓ = ℓ} _ (val x) _ = Lift (ℓ ⊔ ℓ₁ ⊔ ℓ₂) x
-  x ⊨' f'₁ ∧ f'₂ ⦗ prev ⦘ = x ⊨' f'₁ ⦗ prev ⦘ × x ⊨' f'₂ ⦗ prev ⦘
-  x ⊨' f'₁ ∨ f'₂ ⦗ prev ⦘ = x ⊨' f'₁ ⦗ prev ⦘ ⊎ x ⊨' f'₂ ⦗ prev ⦘
-  x ⊨' ∀⦗ _ ⦘ f' ⦗ prev ⦘ = ∀ a → x ⊨' f' a ⦗ prev ⦘
-  x ⊨' ∃⦗ _ ⦘ f' ⦗ prev ⦘ = ∃[ a ] x ⊨' f' a ⦗ prev ⦘
-  x ⊨' ⟨ at ⟩ f' ⦗ prev ⦘ = x ⊨'⟪ at ⟫ f' ⦗ prev ⦘
-    where
-    _⊨'⟪_⟫_⦗_⦘ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {ℓ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ)) n} → Program C α → ActionTree (Shape C) ℓ → Formula' (Shape C) ℓ xs → Previous (Shape C) ℓ xs → Set (ℓ ⊔ ℓ₁ ⊔ ℓ₂)
-    x ⊨'⟪ ⦗ ε ⦘ ⟫ f' ⦗ prev ⦘ = x ⊨' f' ⦗ prev ⦘
-    x ⊨'⟪ ⦗ actF af ⦘ ⟫ f' ⦗ prev ⦘ with free x
-    ... | pure _ = ⊥
-    ... | impure (s , c) = s ∈ af × ∃[ r ] c r ⊨' f' ⦗ prev ⦘
-    x ⊨'⟪ ⦗ at * ⦘ ⟫ f' ⦗ prev ⦘ = let f = ⟨ at ⟩ ref zero ⦗ [] ⦘ ∨ ref⁺ f' in Mu x f ((false , formula f) ∷ prev)
-    x ⊨'⟪ ε · at ⟫ f' ⦗ prev ⦘ = x ⊨'⟪ at ⟫ f' ⦗ prev ⦘
-    x ⊨'⟪ (actF af) · at ⟫ f' ⦗ prev ⦘ with free x
-    ... | pure _ = ⊥
-    ... | impure (s , c) = s ∈ af × ∃[ r ] c r ⊨'⟪ at ⟫ f' ⦗ prev ⦘
-    x ⊨'⟪ (at₁ *) · at₂ ⟫ f' ⦗ prev ⦘ = let f = ⟨ at₁ ⟩ ref zero ⦗ [] ⦘ ∨ ⟨ at₂ ⟩ (ref⁺ f') in Mu x f ((false , formula f) ∷ prev)
-    x ⊨'⟪ at₁ + at₂ ⟫ f' ⦗ prev ⦘ = x ⊨'⟪ at₁ ⟫ f' ⦗ prev ⦘ ⊎ x ⊨'⟪ at₂ ⟫ f' ⦗ prev ⦘
-  x ⊨' [ at ] f' ⦗ prev ⦘ = x ⊨'⟦ at ⟧ f' ⦗ prev ⦘
-    where
-    _⊨'⟦_⟧_⦗_⦘ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {ℓ : Level} → {n : ℕ} → {xs : Vec (List (Set ℓ)) n} → Program C α → ActionTree (Shape C) ℓ → Formula' (Shape C) ℓ xs → Previous (Shape C) ℓ xs → Set (ℓ ⊔ ℓ₁ ⊔ ℓ₂)
-    x ⊨'⟦ ⦗ ε ⦘ ⟧ f' ⦗ prev ⦘ = x ⊨' f' ⦗ prev ⦘
-    x ⊨'⟦ ⦗ actF af ⦘ ⟧ f' ⦗ prev ⦘ with free x
-    ... | pure _ = ⊤
-    ... | impure (s , c) = s ∈ af → ∀ r → c r ⊨' f' ⦗ prev ⦘
-    x ⊨'⟦ ⦗ at * ⦘ ⟧ f' ⦗ prev ⦘ = let f = [ at ] ref zero ⦗ [] ⦘ ∧ ref⁺ f' in Nu x f ((true , formula f) ∷ prev)
-    x ⊨'⟦ ε · at ⟧ f' ⦗ prev ⦘ = x ⊨'⟦ at ⟧ f' ⦗ prev ⦘
-    x ⊨'⟦ (actF af) · at ⟧ f' ⦗ prev ⦘  with free x
-    ... | pure _ = ⊤
-    ... | impure (s , c) = s ∈ af → ∀ r → c r ⊨'⟦ at ⟧ f' ⦗ prev ⦘
-    x ⊨'⟦ (at₁ *) · at₂ ⟧ f' ⦗ prev ⦘ = let f = [ at₁ ] ref zero ⦗ [] ⦘ ∧ [ at₂ ] (ref⁺ f') in Nu x f ((true , formula f) ∷ prev)
-    x ⊨'⟦ at₁ + at₂ ⟧ f' ⦗ prev ⦘ = x ⊨'⟦ at₁ ⟧ f' ⦗ prev ⦘ × x ⊨'⟦ at₂ ⟧ f' ⦗ prev ⦘
-  x ⊨' μ p' ⦗ prev ⦘ = Mu x (applyᵈ p') ((false , p') ∷ prev)
-  x ⊨' ν p' ⦗ prev ⦘ = Nu x (applyᵈ p') ((true , p') ∷ prev)
-  x ⊨' ref i ⦗ args ⦘ ⦗ prev ⦘ with lookup prev i
-  ... | false , _ , _ , p' , prev = Mu x (apply p' args) prev
-  ... | true , _ , _ , p' , prev = Nu x (apply p' args) prev
-
-  find : {α : Set ℓ₁} → {β : Set ℓ₂} → {n : ℕ} → Vec (α × β) n → α → DecidableEquality α → Maybe (Fin n × β)
-  find [] _ _ = nothing
-  find ((a₁ , b) ∷ xs) a₂ _≟_ with a₁ ≟ a₂
-  ... | yes _ = just (zero , b)
-  ... | no _ with find xs a₂ _≟_
-  ...   | just (i , b) = just (suc i , b)
-  ...   | nothing = nothing
-
-open Aux using (Formula'; Parameterized'; []; desugar-rf; _⊨'_⦗_⦘; find)
-open Aux using (Mu; Nu; muᶜ; nuᶜ) public
-
-open Formula'
-open Parameterized'
+find : {ℓ₁ ℓ₂ : Level} → {α : Set ℓ₁} → {β : Set ℓ₂} → (xs : List (α × β)) → α → DecidableEquality α → Maybe (Fin (length xs) × β)
+find [] _ _ = nothing
+find ((a₁ , b) ∷ xs) a₂ _≟_ with a₁ ≟ a₂
+... | yes _ = just (zero , b)
+... | no _ with find xs a₂ _≟_
+...   | just (i , b) = just (suc i , b)
+...   | nothing = nothing
 
 infix 60 val_
 infix 60 ref_⦗_⦘
@@ -233,89 +62,383 @@ infix 30 ∃⦗_⦘_
 infix 30 μ_．_
 infix 30 ν_．_
 
-data Formulaⁱ {n : ℕ} (S : Set s) (ℓ : Level) : Vec (String × Bool × List (Set ℓ)) n → Set (s ⊔ sucˡ ℓ)
+data Formulaʳᶠ (α : Set a) (ℓ : Level) : List (String × Bool × List (Set ℓ)) → Set (a ⊔ sucˡ ℓ)
 
 infix 70 formula_
 infix 65 _＝_↦_
 
-data Parameterizedⁱ {n : ℕ} (S : Set s) (ℓ : Level) (xs : Vec (String × Bool × List (Set ℓ)) n) : List (Set ℓ) → Set (s ⊔ (sucˡ ℓ)) where
-  formula_ : Formulaⁱ S ℓ xs → Parameterizedⁱ S ℓ xs []
-  _＝_↦_ : ∀ {αs} → (α : Set ℓ) → α → (α → Parameterizedⁱ S ℓ xs αs) → Parameterizedⁱ S ℓ xs (α ∷ αs)
+data Parameterizedʳᶠ (α : Set a) (ℓ : Level) (prev : List (String × Bool × List (Set ℓ))) : List (Set ℓ) → Set (a ⊔ sucˡ ℓ) where
+  formula_ : Formulaʳᶠ α ℓ prev → Parameterizedʳᶠ α ℓ prev []
+  _＝_↦_ : ∀ {params} → (T : Set ℓ) → T → (T → Parameterizedʳᶠ α ℓ prev params) → Parameterizedʳᶠ α ℓ prev (T ∷ params)
 
-data Formulaⁱ S ℓ where
-  true false : ∀ {xs} → Formulaⁱ S ℓ xs
-  val_ : ∀ {xs} → Set ℓ → Formulaⁱ S ℓ xs
-  ~_ : ∀ {xs} → Formulaⁱ S ℓ (map (map₂ (map₁ not)) xs) → Formulaⁱ S ℓ xs
-  _∧_ _∨_ : ∀ {xs} → Formulaⁱ S ℓ xs → Formulaⁱ S ℓ xs → Formulaⁱ S ℓ xs
-  _⇒_ : ∀ {xs} → Formulaⁱ S ℓ (map (map₂ (map₁ not)) xs) → Formulaⁱ S ℓ xs → Formulaⁱ S ℓ xs
-  ∀⦗_⦘_ ∃⦗_⦘_ : ∀ {xs} → (α : Set ℓ) → (α → Formulaⁱ S ℓ xs) → Formulaⁱ S ℓ xs
-  ⟨_⟩_ [_]_ : ∀ {xs} → RegularFormula S ℓ → Formulaⁱ S ℓ xs → Formulaⁱ S ℓ xs
-  μ_．_ ν_．_ : ∀ {αs xs} → (name : String) → Parameterizedⁱ S ℓ ((name , true , αs) ∷ xs) αs → Formulaⁱ S ℓ xs
-  ref_⦗_⦘ : ∀ {xs} → (name : String) → case find xs name _≟_ of (λ { (just (_ , true , αs)) → Arguments ℓ αs
-                                                                   ; _ → ⊥ }) → Formulaⁱ S ℓ xs
+data Formulaʳᶠ α ℓ where
+  true false : ∀ {prev} → Formulaʳᶠ α ℓ prev
+  val_ : ∀ {prev} → Set ℓ → Formulaʳᶠ α ℓ prev
+  ~_ : ∀ {prev} → Formulaʳᶠ α ℓ (map (map₂ (map₁ not)) prev) → Formulaʳᶠ α ℓ prev
+  _∧_ _∨_ : ∀ {prev} → Formulaʳᶠ α ℓ prev → Formulaʳᶠ α ℓ prev → Formulaʳᶠ α ℓ prev
+  _⇒_ : ∀ {prev} → Formulaʳᶠ α ℓ (map (map₂ (map₁ not)) prev) → Formulaʳᶠ α ℓ prev → Formulaʳᶠ α ℓ prev
+  ∀⦗_⦘_ ∃⦗_⦘_ : ∀ {prev} → (T : Set ℓ) → (T → Formulaʳᶠ α ℓ prev) → Formulaʳᶠ α ℓ prev
+  ⟨_⟩_ [_]_ : ∀ {prev} → RegularFormula α ℓ → Formulaʳᶠ α ℓ prev → Formulaʳᶠ α ℓ prev
+  μ_．_ ν_．_ : ∀ {prev params} → (name : String) → Parameterizedʳᶠ α ℓ ((name , true , params) ∷ prev) params → Formulaʳᶠ α ℓ prev
+  ref_⦗_⦘ : ∀ {prev} → (name : String) → case find prev name _≟_ of (λ { (just (_ , true , αs)) → Arguments ℓ αs
+                                                                       ; _ → ⊥ }) → Formulaʳᶠ α ℓ prev
 
-Formula : (S : Set s) → (ℓ : Level) → Set (s ⊔ sucˡ ℓ)
-Formula S ℓ = Formulaⁱ S ℓ []
+applyʳᶠ-d : {α : Set a} → {ℓ : Level} → {prev : List (String × Bool × List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedʳᶠ α ℓ prev params → Formulaʳᶠ α ℓ prev
+applyʳᶠ-d (formula fʳᶠ) = fʳᶠ
+applyʳᶠ-d (_ ＝ t ↦ pʳᶠ) = applyʳᶠ-d (pʳᶠ t)
+
+applyʳᶠ : {α : Set a} → {ℓ : Level} → {prev : List (String × Bool × List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedʳᶠ α ℓ prev params → Arguments ℓ params → Formulaʳᶠ α ℓ prev
+applyʳᶠ (formula fʳᶠ) _ = fʳᶠ
+applyʳᶠ (_ ＝ _ ↦ pʳᶠ) (t ∷ args) = applyʳᶠ (pʳᶠ t) args
+
+data ActionTree (α : Set a) (ℓ : Level) : Set (a ⊔ sucˡ ℓ)
+
+data ActionNode (α : Set a) (ℓ : Level) : Set (a ⊔ sucˡ ℓ) where
+  ε : ActionNode α ℓ
+  actF_ : ActionFormula α ℓ → ActionNode α ℓ
+  _* : ActionTree α ℓ → ActionNode α ℓ
+
+data ActionTree α ℓ where
+  ⦗_⦘ : ActionNode α ℓ → ActionTree α ℓ
+  _·_ : ActionNode α ℓ → ActionTree α ℓ → ActionTree α ℓ
+  _+_ : ActionTree α ℓ → ActionTree α ℓ → ActionTree α ℓ
+
+concatenate : {α : Set a} → {ℓ : Level} → ActionTree α ℓ → ActionTree α ℓ → ActionTree α ℓ
+concatenate ⦗ x ⦘ at₂ = x · at₂
+concatenate (x · at₁) at₂ = x · concatenate at₁ at₂
+concatenate (at₁ + at₂) at₃ = concatenate at₁ at₃ + concatenate at₂ at₃
+
+rf→at : {α : Set a} → {ℓ : Level} → RegularFormula α ℓ → ActionTree α ℓ
+rf→at ε = ⦗ ε ⦘
+rf→at (actF af) = ⦗ actF af ⦘
+rf→at (rf₁ · rf₂) = concatenate (rf→at rf₁) (rf→at rf₂)
+rf→at (rf₁ + rf₂) = rf→at rf₁ + rf→at rf₂
+rf→at (rf *) = ⦗ rf→at rf * ⦘
+rf→at (rf ⁺) = let at = rf→at rf in concatenate at ⦗ at * ⦘
+
+data Formulaᵃᵗ (α : Set a) (ℓ : Level) : List (List (Set ℓ)) → Set (a ⊔ sucˡ ℓ)
+
+data Parameterizedᵃᵗ (α : Set a) (ℓ : Level) (prev : List (List (Set ℓ))) : List (Set ℓ) → Set (a ⊔ sucˡ ℓ) where
+  formula_ : Formulaᵃᵗ α ℓ prev → Parameterizedᵃᵗ α ℓ prev []
+  _＝_↦_ : ∀ {params} → (T : Set ℓ) → T → (T → Parameterizedᵃᵗ α ℓ prev params) → Parameterizedᵃᵗ α ℓ prev (T ∷ params)
+
+data Formulaᵃᵗ α ℓ where
+  true false : ∀ {prev} → Formulaᵃᵗ α ℓ prev
+  val_ : ∀ {prev} → Set ℓ → Formulaᵃᵗ α ℓ prev
+  _∧_ _∨_ : ∀ {prev} → Formulaᵃᵗ α ℓ prev → Formulaᵃᵗ α ℓ prev → Formulaᵃᵗ α ℓ prev
+  ∀⦗_⦘_ ∃⦗_⦘_ : ∀ {prev} → (T : Set ℓ) → (T → Formulaᵃᵗ α ℓ prev) → Formulaᵃᵗ α ℓ prev
+  ⟨_⟩_ [_]_ : ∀ {prev} → ActionTree α ℓ → Formulaᵃᵗ α ℓ prev → Formulaᵃᵗ α ℓ prev
+  μ_ ν_ : ∀ {prev params} → Parameterizedᵃᵗ α ℓ (params ∷ prev) params → Formulaᵃᵗ α ℓ prev
+  ref_⦗_⦘ : ∀ {prev} → (i : Fin (length prev)) → Arguments ℓ (lookupᵛ (fromList prev) i) → Formulaᵃᵗ α ℓ prev
+
+applyᵃᵗ-d : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedᵃᵗ α ℓ prev params → Formulaᵃᵗ α ℓ prev
+applyᵃᵗ-d (formula fᵃᵗ) = fᵃᵗ
+applyᵃᵗ-d (_ ＝ t ↦ pᵃᵗ) = applyᵃᵗ-d (pᵃᵗ t)
+
+applyᵃᵗ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedᵃᵗ α ℓ prev params → Arguments ℓ params → Formulaᵃᵗ α ℓ prev
+applyᵃᵗ (formula fᵃᵗ) _ = fᵃᵗ
+applyᵃᵗ (_ ＝ _ ↦ pᵃᵗ) (t ∷ args) = applyᵃᵗ (pᵃᵗ t) args
+
+h-map : {ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level} → {α : Set ℓ₁} → {β : Set ℓ₂} → {γ : Set ℓ₃} → {δ : Set ℓ₄} → (xs : List (α × β × γ)) → (f : β → δ) → map (proj₂ ∘ proj₂) (map (map₂ (map₁ f)) xs) ≡ map (proj₂ ∘ proj₂) xs
+h-map [] _ = refl
+h-map ((a , b , c) ∷ xs) f = helper refl (h-map xs f)
+  where
+  helper : {ℓ : Level} → {α : Set ℓ} → {x y : α} → {xs ys : List α} → x ≡ y → xs ≡ ys → x ∷ xs ≡ y ∷ ys
+  helper {x = x} {y = y} {xs = xs} {ys = ys} fst snd = subst (λ a → x ∷ xs ≡ a ∷ ys) fst (subst (λ as → x ∷ xs ≡ x ∷ as) snd refl)
+
+h-lookup : {ℓ : Level} → (prev : List (String × Bool × List (Set ℓ))) → {x : String} → {i : Fin (length prev)} → {flag : Bool} → {params : List (Set ℓ)} → find prev x _≟_ ≡ just (i , flag , params) → params ≡ lookupᵛ (fromList (map (proj₂ ∘ proj₂) prev)) (cast (sym (length-map (proj₂ ∘ proj₂) prev)) i)
+h-lookup ((name , _ , _) ∷ prev) {x = x} h with name ≟ x
+h-lookup ((name , _ , _) ∷ prev) {x = .name} refl | yes refl = refl
+... | no _ with find prev x _≟_ | inspect (find prev x) _≟_
+... | just _ | [ eq ]⁼ with h-lookup prev eq
+h-lookup ((name , _ , _) ∷ prev) {x = x} refl | no _ | just _ | [ eq ]⁼ | refl = refl
+
+fʳᶠ→fᵃᵗ : {α : Set a} → {ℓ : Level} → {prev : List (String × Bool × List (Set ℓ))} → Formulaʳᶠ α ℓ prev → Formulaᵃᵗ α ℓ (map (proj₂ ∘ proj₂) prev)
+
+pʳᶠ→pᵃᵗ : {α : Set a} → {ℓ : Level} → {prev : List (String × Bool × List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedʳᶠ α ℓ prev params → Parameterizedᵃᵗ α ℓ (map (proj₂ ∘ proj₂) prev) params
+pʳᶠ→pᵃᵗ (formula fʳᶠ) = formula fʳᶠ→fᵃᵗ fʳᶠ
+pʳᶠ→pᵃᵗ (T ＝ t ↦ pʳᶠ) = T ＝ t ↦ (pʳᶠ→pᵃᵗ ∘ pʳᶠ)
+
+negate : {α : Set a} → {ℓ : Level} → {prev : List (String × Bool × List (Set ℓ))} → Formulaʳᶠ α ℓ prev → Formulaᵃᵗ α ℓ (map (proj₂ ∘ proj₂) prev)
+
+negate-p : {α : Set a} → {ℓ : Level} → {prev : List (String × Bool × List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedʳᶠ α ℓ prev params → Parameterizedᵃᵗ α ℓ (map (proj₂ ∘ proj₂) prev) params
+negate-p (formula fʳᶠ) = formula negate fʳᶠ
+negate-p (T ＝ t ↦ pʳᶠ) = T ＝ t ↦ (negate-p ∘ pʳᶠ)
+
+negate true = false
+negate false = true
+negate (val x) = val (¬ x)
+negate {α = α} {ℓ = ℓ} {prev = prev} (~ fʳᶠ) = subst (Formulaᵃᵗ α ℓ) (h-map prev not) (fʳᶠ→fᵃᵗ fʳᶠ)
+negate (fʳᶠ₁ ∧ fʳᶠ₂) = negate fʳᶠ₁ ∨ negate fʳᶠ₂
+negate (fʳᶠ₁ ∨ fʳᶠ₂) = negate fʳᶠ₁ ∧ negate fʳᶠ₂
+negate {α = α} {ℓ = ℓ} {prev = prev} (fʳᶠ₁ ⇒ fʳᶠ₂) = subst (Formulaᵃᵗ α ℓ) (h-map prev not) (fʳᶠ→fᵃᵗ fʳᶠ₁) ∧ negate fʳᶠ₂
+negate (∀⦗ T ⦘ fʳᶠ) = ∃⦗ T ⦘ (negate ∘ fʳᶠ)
+negate (∃⦗ T ⦘ fʳᶠ) = ∀⦗ T ⦘ (negate ∘ fʳᶠ)
+negate (⟨ rf ⟩ fʳᶠ) = [ rf→at rf ] negate fʳᶠ
+negate ([ rf ] fʳᶠ) = ⟨ rf→at rf ⟩ negate fʳᶠ
+negate (μ name ． pʳᶠ) = ν negate-p pʳᶠ
+negate (ν name ． pʳᶠ) = μ negate-p pʳᶠ
+negate {ℓ = ℓ} {prev = prev} ref name ⦗ args ⦘ with find prev name _≟_ | inspect (find prev name) _≟_
+... | just (i , true , αs) | [ eq ]⁼ = ref cast (sym (length-map (proj₂ ∘ proj₂) prev)) i ⦗ subst (Arguments ℓ) (h-lookup prev eq) args ⦘
+
+fʳᶠ→fᵃᵗ true = true
+fʳᶠ→fᵃᵗ false = false
+fʳᶠ→fᵃᵗ (val x) = val x
+fʳᶠ→fᵃᵗ {α = α} {ℓ = ℓ} {prev = prev} (~ fʳᶠ) = subst (Formulaᵃᵗ α ℓ) (h-map prev not) (negate fʳᶠ)
+fʳᶠ→fᵃᵗ (fʳᶠ₁ ∧ fʳᶠ₂) = fʳᶠ→fᵃᵗ fʳᶠ₁ ∧ fʳᶠ→fᵃᵗ fʳᶠ₂
+fʳᶠ→fᵃᵗ (fʳᶠ₁ ∨ fʳᶠ₂) = fʳᶠ→fᵃᵗ fʳᶠ₁ ∨ fʳᶠ→fᵃᵗ fʳᶠ₂
+fʳᶠ→fᵃᵗ {α = α} {ℓ = ℓ} {prev = prev} (fʳᶠ₁ ⇒ fʳᶠ₂) =  subst (Formulaᵃᵗ α ℓ) (h-map prev not) (negate fʳᶠ₁) ∨ fʳᶠ→fᵃᵗ fʳᶠ₂
+fʳᶠ→fᵃᵗ (∀⦗ α ⦘ fʳᶠ) = ∀⦗ α ⦘ (fʳᶠ→fᵃᵗ ∘ fʳᶠ)
+fʳᶠ→fᵃᵗ (∃⦗ α ⦘ fʳᶠ) = ∃⦗ α ⦘ (fʳᶠ→fᵃᵗ ∘ fʳᶠ)
+fʳᶠ→fᵃᵗ (⟨ rf ⟩ fʳᶠ) = ⟨ rf→at rf ⟩ fʳᶠ→fᵃᵗ fʳᶠ
+fʳᶠ→fᵃᵗ ([ rf ] fʳᶠ) = [ rf→at rf ] fʳᶠ→fᵃᵗ fʳᶠ
+fʳᶠ→fᵃᵗ (μ name ． pʳᶠ) = μ pʳᶠ→pᵃᵗ pʳᶠ
+fʳᶠ→fᵃᵗ (ν name ． pʳᶠ) = ν pʳᶠ→pᵃᵗ pʳᶠ
+fʳᶠ→fᵃᵗ {ℓ = ℓ} {prev = prev} ref name ⦗ args ⦘ with find prev name _≟_ | inspect (find prev name) _≟_
+... | just (i , true , αs) | [ eq ]⁼ = ref cast (sym (length-map (proj₂ ∘ proj₂) prev)) i ⦗ subst (Arguments ℓ) (h-lookup prev eq) args ⦘
+
+data Formulaᵃᶠ (α : Set a) (ℓ : Level) : List (List (Set ℓ)) → Set (a ⊔ sucˡ ℓ)
+
+data Parameterizedᵃᶠ (α : Set a) (ℓ : Level) (prev : List (List (Set ℓ))) : List (Set ℓ) → Set (a ⊔ sucˡ ℓ) where
+  formula_ : Formulaᵃᶠ α ℓ prev → Parameterizedᵃᶠ α ℓ prev []
+  _＝_↦_ : ∀ {params} → (T : Set ℓ) → T → (T → Parameterizedᵃᶠ α ℓ prev params) → Parameterizedᵃᶠ α ℓ prev (T ∷ params)
+
+data Formulaᵃᶠ α ℓ where
+  true false : ∀ {prev} → Formulaᵃᶠ α ℓ prev
+  val_ : ∀ {prev} → Set ℓ → Formulaᵃᶠ α ℓ prev
+  _∧_ _∨_ : ∀ {prev} → Formulaᵃᶠ α ℓ prev → Formulaᵃᶠ α ℓ prev → Formulaᵃᶠ α ℓ prev
+  ∀⦗_⦘_ ∃⦗_⦘_ : ∀ {prev} → (T : Set ℓ) → (T → Formulaᵃᶠ α ℓ prev) → Formulaᵃᶠ α ℓ prev
+  ⟨_⟩_ [_]_ : ∀ {prev} → ActionFormula α ℓ → Formulaᵃᶠ α ℓ prev → Formulaᵃᶠ α ℓ prev
+  μ_ ν_ : ∀ {prev params} → Parameterizedᵃᶠ α ℓ (params ∷ prev) params → Formulaᵃᶠ α ℓ prev
+  ref_⦗_⦘ : ∀ {prev} → (i : Fin (length prev)) → Arguments ℓ (lookupᵛ (fromList prev) i) → Formulaᵃᶠ α ℓ prev
+
+applyᵃᶠ-d : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedᵃᶠ α ℓ prev params → Formulaᵃᶠ α ℓ prev
+applyᵃᶠ-d (formula fᵃᶠ) = fᵃᶠ
+applyᵃᶠ-d (_ ＝ t ↦ pᵃᶠ) = applyᵃᶠ-d (pᵃᶠ t)
+
+applyᵃᶠ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedᵃᶠ α ℓ prev params → Arguments ℓ params → Formulaᵃᶠ α ℓ prev
+applyᵃᶠ (formula fᵃᶠ) _ = fᵃᶠ
+applyᵃᶠ (_ ＝ _ ↦ pᵃᶠ) (t ∷ args) = applyᵃᶠ (pᵃᶠ t) args
+
+ref⁺ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params : List (Set ℓ)} → Formulaᵃᶠ α ℓ prev → Formulaᵃᶠ α ℓ (params ∷ prev)
+ref⁺ fᵃᶠ = ref⁺' {prev₁ = []} fᵃᶠ
+  where
+  ref⁺' : {α : Set a} → {ℓ : Level} → {prev₁ prev₂ : List (List (Set ℓ))} → {params : List (Set ℓ)} → Formulaᵃᶠ α ℓ (prev₁ ++ˡ prev₂) → Formulaᵃᶠ α ℓ (prev₁ ++ˡ params ∷ prev₂)
+
+  ref⁺'-p : {α : Set a} → {ℓ : Level} → {prev₁ prev₂ : List (List (Set ℓ))} → {params₁ params₂ : List (Set ℓ)} → Parameterizedᵃᶠ α ℓ (prev₁ ++ˡ prev₂) params₁ → Parameterizedᵃᶠ α ℓ (prev₁ ++ˡ params₂ ∷ prev₂) params₁
+  ref⁺'-p (formula fᵃᶠ) = formula ref⁺' fᵃᶠ
+  ref⁺'-p (α ＝ a ↦ pᵃᶠ) = α ＝ a ↦ (ref⁺'-p ∘ pᵃᶠ)
+
+  ref⁺' true = true
+  ref⁺' false = false
+  ref⁺' (val x) = val x
+  ref⁺' (fᵃᶠ₁ ∧ fᵃᶠ₂) = ref⁺' fᵃᶠ₁ ∧ ref⁺' fᵃᶠ₂
+  ref⁺' (fᵃᶠ₁ ∨ fᵃᶠ₂) = ref⁺' fᵃᶠ₁ ∨ ref⁺' fᵃᶠ₂
+  ref⁺' (∀⦗ T ⦘ fᵃᶠ) = ∀⦗ T ⦘ (ref⁺' ∘ fᵃᶠ)
+  ref⁺' (∃⦗ T ⦘ fᵃᶠ) = ∃⦗ T ⦘ (ref⁺' ∘ fᵃᶠ)
+  ref⁺' (⟨ af ⟩ fᵃᶠ) = ⟨ af ⟩ ref⁺' fᵃᶠ
+  ref⁺' ([ af ] fᵃᶠ) = [ af ] ref⁺' fᵃᶠ
+  ref⁺' {prev₁ = prev₁} (μ_ {params = params} pᵃᶠ) = μ_ (ref⁺'-p {prev₁ = params ∷ prev₁} pᵃᶠ)
+  ref⁺' {prev₁ = prev₁} (ν_ {params = params} pᵃᶠ) = ν_ (ref⁺'-p {prev₁ = params ∷ prev₁} pᵃᶠ)
+  ref⁺' {ℓ = ℓ} {prev₁ = prev₁} {prev₂ = prev₂} {params = params} (ref i ⦗ args ⦘) with toℕ i <ᵇ length prev₁ | inspect (_<ᵇ_ (toℕ i)) (length prev₁)
+  ... | false | [ eq ]⁼ = ref i' params prev₁ prev₂ i ⦗ subst (Arguments ℓ) (hlookup params prev₁ prev₂ i (≮⇒≥ λ h → subst T eq (<⇒<ᵇ h))) args ⦘
+    where
+    i' : {ℓ : Level} → {α : Set ℓ} → (x : α) → (xs₁ : List α) → (xs₂ : List α) → Fin (length (xs₁ ++ˡ xs₂)) → Fin (length (xs₁ ++ˡ x ∷ xs₂))
+    i' _ xs₁ xs₂ i = cast (sym (trans (length-++ xs₁) (trans (+-suc (length xs₁) (length xs₂)) (cong suc (sym (length-++ xs₁)))))) (suc i)
+
+    hlookup : {ℓ : Level} → {α : Set ℓ} → (x : α) → (xs₁ : List α) → (xs₂ : List α) → (i : Fin (length (xs₁ ++ˡ xs₂))) → toℕ i ≥ length xs₁ → lookupᵛ (fromList (xs₁ ++ˡ xs₂)) i ≡ lookupᵛ (fromList (xs₁ ++ˡ x ∷ xs₂)) (i' x xs₁ xs₂ i)
+    hlookup _ [] xs₂ i _ = subst (λ j → lookupᵛ (fromList xs₂) i ≡ lookupᵛ (fromList xs₂) j) (sym (cast-is-id refl i)) refl
+    hlookup x (_ ∷ xs₁) xs₂ (suc i) (s≤s h) = hlookup x xs₁ xs₂ i h
+  ... | true | [ eq ]⁼ = ref i' params prev₁ prev₂ i ⦗ subst (Arguments ℓ) (hlookup params prev₁ prev₂ i (<ᵇ⇒< (toℕ i) (length prev₁) (subst T (sym eq) tt₀))) args ⦘
+    where
+    i' : {ℓ : Level} → {α : Set ℓ} → (x : α) → (xs₁ : List α) → (xs₂ : List α) → Fin (length (xs₁ ++ˡ xs₂)) → Fin (length (xs₁ ++ˡ x ∷ xs₂))
+    i' _ xs₁ xs₂ i = cast (sym (trans (length-++ xs₁) (trans (+-suc (length xs₁) (length xs₂)) (cong suc (sym (length-++ xs₁)))))) (inject₁ i)
+
+    hlookup : {ℓ : Level} → {α : Set ℓ} → (x : α) → (xs₁ : List α) → (xs₂ : List α) → (i : Fin (length (xs₁ ++ˡ xs₂))) → toℕ i < (length xs₁) → lookupᵛ (fromList (xs₁ ++ˡ xs₂)) i ≡ lookupᵛ (fromList (xs₁ ++ˡ x ∷ xs₂)) (i' x xs₁ xs₂ i)
+    hlookup _ (_ ∷ _) _ zero _ = refl
+    hlookup x (_ ∷ xs₁) xs₂ (suc i) (s≤s h) = hlookup x xs₁ xs₂ i h
+
+at→af-∃ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → ActionTree α ℓ → Formulaᵃᶠ α ℓ prev → Formulaᵃᶠ α ℓ prev
+at→af-∃ ⦗ ε ⦘ fᵃᶠ = fᵃᶠ
+at→af-∃ ⦗ actF af ⦘ fᵃᶠ = ⟨ af ⟩ fᵃᶠ
+at→af-∃ ⦗ at * ⦘ fᵃᶠ = μ (formula (at→af-∃ at ref zero ⦗ [] ⦘ ∨ ref⁺ fᵃᶠ))
+at→af-∃ (ε · at) fᵃᶠ = at→af-∃ at fᵃᶠ
+at→af-∃ ((actF af) · at) fᵃᶠ = ⟨ af ⟩ at→af-∃ at fᵃᶠ
+at→af-∃ ((at₁ *) · at₂) fᵃᶠ = μ (formula (at→af-∃ at₁ ref zero ⦗ [] ⦘ ∨ ref⁺ (at→af-∃ at₂ fᵃᶠ)))
+at→af-∃ (at₁ + at₂) fᵃᶠ = at→af-∃ at₁ fᵃᶠ ∨ at→af-∃ at₂ fᵃᶠ
+
+at→af-∀ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → ActionTree α ℓ → Formulaᵃᶠ α ℓ prev → Formulaᵃᶠ α ℓ prev
+at→af-∀ ⦗ ε ⦘ fᵃᶠ = fᵃᶠ
+at→af-∀ ⦗ actF af ⦘ fᵃᶠ = [ af ] fᵃᶠ
+at→af-∀ ⦗ at * ⦘ fᵃᶠ = ν (formula (at→af-∀ at ref zero ⦗ [] ⦘ ∧ ref⁺ fᵃᶠ))
+at→af-∀ (ε · at) fᵃᶠ = at→af-∀ at fᵃᶠ
+at→af-∀ ((actF af) · at) fᵃᶠ = [ af ] at→af-∀ at fᵃᶠ
+at→af-∀ ((at₁ *) · at₂) fᵃᶠ = ν (formula (at→af-∀ at₁ ref zero ⦗ [] ⦘ ∧ ref⁺ (at→af-∀ at₂ fᵃᶠ)))
+at→af-∀ (at₁ + at₂) fᵃᶠ = at→af-∀ at₁ fᵃᶠ ∧ at→af-∀ at₂ fᵃᶠ
+
+fᵃᵗ→fᵃᶠ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → Formulaᵃᵗ α ℓ prev → Formulaᵃᶠ α ℓ prev
+
+pᵃᵗ→pᵃᶠ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params : List (Set ℓ)} → Parameterizedᵃᵗ α ℓ prev params → Parameterizedᵃᶠ α ℓ prev params
+pᵃᵗ→pᵃᶠ (formula fᵃᵗ) = formula fᵃᵗ→fᵃᶠ fᵃᵗ
+pᵃᵗ→pᵃᶠ (T ＝ t ↦ pᵃᵗ) = T ＝ t ↦ (pᵃᵗ→pᵃᶠ ∘ pᵃᵗ)
+
+fᵃᵗ→fᵃᶠ true = true
+fᵃᵗ→fᵃᶠ false = false
+fᵃᵗ→fᵃᶠ (val x) = val x
+fᵃᵗ→fᵃᶠ (fᵃᵗ₁ ∧ fᵃᵗ₂) = fᵃᵗ→fᵃᶠ fᵃᵗ₁ ∧ fᵃᵗ→fᵃᶠ fᵃᵗ₂
+fᵃᵗ→fᵃᶠ (fᵃᵗ₁ ∨ fᵃᵗ₂) = fᵃᵗ→fᵃᶠ fᵃᵗ₁ ∨ fᵃᵗ→fᵃᶠ fᵃᵗ₂
+fᵃᵗ→fᵃᶠ (∀⦗ T ⦘ fᵃᵗ) = ∀⦗ T ⦘ (fᵃᵗ→fᵃᶠ ∘ fᵃᵗ)
+fᵃᵗ→fᵃᶠ (∃⦗ T ⦘ fᵃᵗ) = ∃⦗ T ⦘ (fᵃᵗ→fᵃᶠ ∘ fᵃᵗ)
+fᵃᵗ→fᵃᶠ (⟨ at ⟩ fᵃᵗ) = at→af-∃ at (fᵃᵗ→fᵃᶠ fᵃᵗ)
+fᵃᵗ→fᵃᶠ ([ at ] fᵃᵗ) = at→af-∀ at (fᵃᵗ→fᵃᶠ fᵃᵗ)
+fᵃᵗ→fᵃᶠ (μ pᵃᵗ) = μ pᵃᵗ→pᵃᶠ pᵃᵗ
+fᵃᵗ→fᵃᶠ (ν pᵃᵗ) = ν pᵃᵗ→pᵃᶠ pᵃᵗ
+fᵃᵗ→fᵃᶠ ref i ⦗ args ⦘ = ref i ⦗ args ⦘
+
+data History (α : Set a) (ℓ : Level) : List (List (Set ℓ)) → List (List (Set ℓ)) → Set (a ⊔ sucˡ ℓ) where
+  [] : ∀ {prev : List (List (Set ℓ))} → History α ℓ [] prev
+  _∷_ : ∀ {prev₁ prev₂ : List (List (Set ℓ))} {params : List (Set ℓ)} → Bool × Parameterizedᵃᶠ α ℓ (params ∷ (prev₁ ++ˡ prev₂)) params → History α ℓ prev₁ prev₂ → History α ℓ (params ∷ prev₁) prev₂
+
+lookup : {α : Set a} → {ℓ : Level} → {prev₁ prev₂ : List (List (Set ℓ))} → History α ℓ prev₁ prev₂ → (i : Fin (length prev₁)) → let params = lookupᵛ (fromList prev₁) i in Bool × Σ[ prev₃ ∈ List (List (Set ℓ)) ] Parameterizedᵃᶠ α ℓ (params ∷ prev₃ ++ˡ prev₂) params × History α ℓ (params ∷ prev₃) prev₂
+lookup {prev₁ = _ ∷ prev} hist@((fp , pᵃᶠ) ∷ _) zero = fp , prev , pᵃᶠ , hist
+lookup (_ ∷ hist) (suc i) = lookup hist i
+
+_++_ : {α : Set a} → {ℓ : Level} → {prev₁ prev₂ prev₃ : List (List (Set ℓ))} → History α ℓ prev₁ (prev₂ ++ˡ prev₃) → History α ℓ prev₂ prev₃ → History α ℓ (prev₁ ++ˡ prev₂) prev₃
+[] ++ hist₂ = hist₂
+_++_ {α = α} {ℓ = ℓ} {prev₁ = params ∷ prev₁} {prev₂ = prev₂} {prev₃ = prev₃} ((b , pᵃᶠ) ∷ hist₁) hist₂ = (b , subst (λ x → Parameterizedᵃᶠ α ℓ (params ∷ x) params) (sym (++-assoc prev₁ prev₂ prev₃)) pᵃᶠ) ∷ (hist₁ ++ hist₂)
+
+transform-f : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params : List (Set ℓ)} → Formulaᵃᶠ α ℓ (params ∷ prev) → Formulaᵃᶠ α ℓ (params ∷ prev ++ˡ [])
+transform-f {α = α} {ℓ = ℓ} {prev = prev} {params = params} fᵃᶠ = subst (λ x → Formulaᵃᶠ α ℓ (params ∷ x)) (sym (++-identityʳ prev)) fᵃᶠ
+
+transform-p : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → {params₁ params₂ : List (Set ℓ)} → Parameterizedᵃᶠ α ℓ (params₁ ∷ prev) params₂ → Parameterizedᵃᶠ α ℓ (params₁ ∷ prev ++ˡ []) params₂
+transform-p (formula fᵃᶠ) = formula transform-f fᵃᶠ
+transform-p (T ＝ t ↦ pᵃᶠ) = T ＝ t ↦ (transform-p ∘ pᵃᶠ)
+
+transform-hist : {α : Set a} → {ℓ : Level} → {prev₁ prev₂ : List (List (Set ℓ))} → {params : List (Set ℓ)} → History α ℓ (params ∷ prev₁) prev₂ → History α ℓ (params ∷ prev₁ ++ˡ []) prev₂
+transform-hist {α = α} {ℓ = ℓ} {prev₁ = prev₁} {prev₂ = prev₂} {params = params} hist = subst (λ x → History α ℓ (params ∷ x) prev₂) (sym (++-identityʳ prev₁)) hist
+
+infix 25 _⊨ᵃᶠ_⦗_⦘
+
+_⊨ᵃᶠ_⦗_⦘ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → Program C R → Formulaᵃᶠ (Shape C) ℓ prev → History (Shape C) ℓ prev [] → Set (s ⊔ p ⊔ ℓ)
+
+record Mu {C : Container s p} {R : Set r} {ℓ : Level} {prev : List (List (Set ℓ))} (x : Program C R) (f : Formulaᵃᶠ (Shape C) ℓ prev) (hist : History (Shape C) ℓ prev []) : Set (s ⊔ p ⊔ ℓ) where
+  inductive
+  constructor muᶜ
+  field
+    mu : x ⊨ᵃᶠ f ⦗ hist ⦘
+
+record Nu {C : Container s p} {R : Set r} {ℓ : Level} {prev : List (List (Set ℓ))} (x : Program C R) (f : Formulaᵃᶠ (Shape C) ℓ prev) (hist : History (Shape C) ℓ prev []) : Set (s ⊔ p ⊔ ℓ) where
+  coinductive
+  constructor nuᶜ
+  field
+    nu : x ⊨ᵃᶠ f ⦗ hist ⦘
+
+_ ⊨ᵃᶠ true ⦗ _ ⦘ = ⊤
+_ ⊨ᵃᶠ false ⦗ _ ⦘ = ⊥
+_⊨ᵃᶠ_⦗_⦘ {s = s} {p = p} {ℓ = ℓ} _ (val x) _ = Lift (s ⊔ p ⊔ ℓ) x
+x ⊨ᵃᶠ fᵃᶠ₁ ∧ fᵃᶠ₂ ⦗ hist ⦘ = x ⊨ᵃᶠ fᵃᶠ₁ ⦗ hist ⦘ × x ⊨ᵃᶠ fᵃᶠ₂ ⦗ hist ⦘
+x ⊨ᵃᶠ fᵃᶠ₁ ∨ fᵃᶠ₂ ⦗ hist ⦘ = x ⊨ᵃᶠ fᵃᶠ₁ ⦗ hist ⦘ ⊎ x ⊨ᵃᶠ fᵃᶠ₂ ⦗ hist ⦘
+x ⊨ᵃᶠ ∀⦗ _ ⦘ fᵃᶠ ⦗ hist ⦘ = ∀ t → x ⊨ᵃᶠ fᵃᶠ t ⦗ hist ⦘
+x ⊨ᵃᶠ ∃⦗ _ ⦘ fᵃᶠ ⦗ hist ⦘ = ∃[ t ] x ⊨ᵃᶠ fᵃᶠ t ⦗ hist ⦘
+x ⊨ᵃᶠ ⟨ af ⟩ fᵃᶠ ⦗ hist ⦘ with free x
+... | pure _ = ⊥
+... | impure (s , c) = s ∈ af × ∃[ p ] c p ⊨ᵃᶠ fᵃᶠ ⦗ hist ⦘
+x ⊨ᵃᶠ [ af ] fᵃᶠ ⦗ hist ⦘ with free x
+... | pure _ = ⊤
+... | impure (s , c) = s ∈ af → ∀ p → c p ⊨ᵃᶠ fᵃᶠ ⦗ hist ⦘
+x ⊨ᵃᶠ μ pᵃᶠ ⦗ hist ⦘ = Mu x (applyᵃᶠ-d pᵃᶠ) ((false , transform-p pᵃᶠ) ∷ hist)
+x ⊨ᵃᶠ ν pᵃᶠ ⦗ hist ⦘ = Nu x (applyᵃᶠ-d pᵃᶠ) ((true , transform-p pᵃᶠ) ∷ hist)
+x ⊨ᵃᶠ ref i ⦗ args ⦘ ⦗ hist ⦘ with lookup hist i
+... | false , _ , pᵃᶠ , hist₁ = Mu x (applyᵃᶠ pᵃᶠ args) (transform-hist hist₁)
+... | true , _ , pᵃᶠ , hist₁ = Nu x (applyᵃᶠ pᵃᶠ args) (transform-hist hist₁)
+
+infix 25 _⊨ᵃᵗ_⦗_⦘
+
+_⊨ᵃᵗ_⦗_⦘ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → Program C R → Formulaᵃᵗ (Shape C) ℓ prev → History (Shape C) ℓ prev [] → Set (s ⊔ p ⊔ ℓ)
+x ⊨ᵃᵗ fᵃᵗ ⦗ hist ⦘ = x ⊨ᵃᶠ fᵃᵗ→fᵃᶠ fᵃᵗ ⦗ hist ⦘
+
+infix 25 _⊨ʳᶠ_⦗_⦘
+
+_⊨ʳᶠ_⦗_⦘ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (String × Bool × List (Set ℓ))} → Program C R → Formulaʳᶠ (Shape C) ℓ prev → History (Shape C) ℓ (map (proj₂ ∘ proj₂) prev) [] → Set (s ⊔ p ⊔ ℓ)
+x ⊨ʳᶠ fʳᶠ ⦗ hist ⦘ = x ⊨ᵃᵗ fʳᶠ→fᵃᵗ fʳᶠ ⦗ hist ⦘
+
+Formula : (α : Set a) → (ℓ : Level) → Set (a ⊔ sucˡ ℓ)
+Formula α ℓ = Formulaʳᶠ α ℓ []
 
 infix 25 _⊨_
 
-_⊨_ : {C : Container ℓ₁ ℓ₂} → {α : Set ℓ₃} → {ℓ : Level} → Program C α → Formula (Shape C) ℓ → Set (ℓ ⊔ ℓ₁ ⊔ ℓ₂)
-x ⊨ f = x ⊨' desugar f ⦗ [] ⦘
+_⊨_ : {C : Container s p} → {R : Set r} → {ℓ : Level} → Program C R → Formula (Shape C) ℓ → Set (s ⊔ p ⊔ ℓ)
+x ⊨ f = x ⊨ʳᶠ f ⦗ [] ⦘
+
+
+
+open Mu
+open Nu
+
+h-at→af-∃ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (at₁ at₂ : ActionTree α ℓ) → (fᵃᶠ : Formulaᵃᶠ α ℓ prev) → at→af-∃ (concatenate at₁ at₂) fᵃᶠ ≡ at→af-∃ at₁ (at→af-∃ at₂ fᵃᶠ)
+h-at→af-∃ ⦗ ε ⦘ _ _ = refl
+h-at→af-∃ ⦗ actF _ ⦘ _ _ = refl
+h-at→af-∃ ⦗ _ * ⦘ _ _ = refl
+h-at→af-∃ (ε · at₁) at₂ fᵃᶠ = h-at→af-∃ at₁ at₂ fᵃᶠ
+h-at→af-∃ ((actF af) · at₁) at₂ fᵃᶠ = cong (⟨_⟩_ af) (h-at→af-∃ at₁ at₂ fᵃᶠ)
+h-at→af-∃ ((at₁ *) · at₂) at₃ fᵃᶠ = cong₂ (λ fᵃᶠ₁ fᵃᶠ₂ → μ (formula (fᵃᶠ₁ ∨ ref⁺ fᵃᶠ₂))) refl (h-at→af-∃ at₂ at₃ fᵃᶠ)
+h-at→af-∃ (at₁ + at₂) at₃ fᵃᶠ = cong₂ _∨_ (h-at→af-∃ at₁ at₃ fᵃᶠ) (h-at→af-∃ at₂ at₃ fᵃᶠ)
+
+h-concatenate-∃ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ ⟨ concatenate at₁ at₂ ⟩ fᵃᵗ ⦗ hist ⦘ ⇔ x ⊨ᵃᵗ ⟨ at₁ ⟩ ⟨ at₂ ⟩ fᵃᵗ ⦗ hist ⦘
+h-concatenate-∃ x at₁ at₂ fᵃᵗ hist = h-concatenate-∃ₗ x at₁ at₂ fᵃᵗ hist , h-concatenate-∃ᵣ x at₁ at₂ fᵃᵗ hist
   where
-  negate-helper : {α : Set ℓ₁} → {β : Set ℓ₂} → {γ : Set ℓ₃} → {δ : Set ℓ₄} → {n : ℕ} → (xs : Vec (α × β × γ) n) → (f : β → δ) → map (proj₂ ∘ proj₂) (map (map₂ (map₁ f)) xs) ≡ map (proj₂ ∘ proj₂) xs
-  negate-helper [] _ = refl
-  negate-helper ((a , b , c) ∷ xs) f = helper refl (negate-helper xs f)
-    where
-    helper : {ℓ : Level} → {α : Set ℓ} → {x y : α} → {n : ℕ} → {xs ys : Vec α n} → x ≡ y → xs ≡ ys → x ∷ xs ≡ y ∷ ys
-    helper {x = x} {y = y} {xs = xs} {ys = ys} fst snd = subst (λ a → x ∷ xs ≡ a ∷ ys) fst (subst (λ as → x ∷ xs ≡ x ∷ as) snd refl)
+  h-concatenate-∃ₗ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ ⟨ concatenate at₁ at₂ ⟩ fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ ⟨ at₁ ⟩ ⟨ at₂ ⟩ fᵃᵗ ⦗ hist ⦘
+  h-concatenate-∃ₗ _ ⦗ ε ⦘ _ _ _ h = h
+  h-concatenate-∃ₗ _ ⦗ actF _ ⦘ _ _ _ h = h
+  h-concatenate-∃ₗ _ ⦗ _ * ⦘ _ _ _ h = h
+  h-concatenate-∃ₗ x (ε · at₁) at₂ fᵃᵗ hist h = h-concatenate-∃ₗ x at₁ at₂ fᵃᵗ hist h
+  h-concatenate-∃ₗ x ((actF af) · at₁) at₂ fᵃᵗ hist h with free x
+  h-concatenate-∃ₗ x ((actF af) · at₁) at₂ fᵃᵗ hist (h∈ , p , h) | impure (_ , c) = h∈ , p , h-concatenate-∃ₗ (c p) at₁ at₂ fᵃᵗ hist h
+  h-concatenate-∃ₗ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∃ at₁ ref zero ⦗ [] ⦘ ∨ ref⁺ fᵃᶠ in Mu x fᵃᶠ' ((false , formula transform-f fᵃᶠ') ∷ hist)) (h-at→af-∃ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ)) h
+  h-concatenate-∃ₗ x (at₁ + _) at₃ fᵃᵗ hist (inj₁ h) = inj₁ (h-concatenate-∃ₗ x at₁ at₃ fᵃᵗ hist h)
+  h-concatenate-∃ₗ x (_ + at₂) at₃ fᵃᵗ hist (inj₂ h) = inj₂ (h-concatenate-∃ₗ x at₂ at₃ fᵃᵗ hist h)
 
-  ref-helper : {ℓ : Level} → {n : ℕ} → {i : Fin n} → {b : Bool} → {αs : List (Set ℓ)} → (xs : Vec (String × Bool × List (Set ℓ)) n) → (x : String) → find xs x _≟_ ≡ just (i , b , αs) → αs ≡ lookupᵛ (map (proj₂ ∘ proj₂) xs) i
-  ref-helper ((x₁ , _ , _) ∷ xs) x h with x₁ ≟ x
-  ref-helper ((x₁ , _ , _) ∷ xs) .x₁ refl | yes refl = refl
-  ... | no _ with find xs x _≟_ | inspect (find xs x) _≟_
-  ...   | just _ | [ eq ]⁼ with ref-helper xs x eq
-  ref-helper ((x₁ , _ , _) ∷ xs) x refl | no _ | just _ | [ eq ]⁼ | refl = refl
+  h-concatenate-∃ᵣ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ ⟨ at₁ ⟩ ⟨ at₂ ⟩ fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ ⟨ concatenate at₁ at₂ ⟩ fᵃᵗ ⦗ hist ⦘
+  h-concatenate-∃ᵣ _ ⦗ ε ⦘ _ _ _ h = h
+  h-concatenate-∃ᵣ _ ⦗ actF _ ⦘ _ _ _ h = h
+  h-concatenate-∃ᵣ _ ⦗ _ * ⦘ _ _ _ h = h
+  h-concatenate-∃ᵣ x (ε · at₁) at₂ fᵃᵗ hist h = h-concatenate-∃ᵣ x at₁ at₂ fᵃᵗ hist h
+  h-concatenate-∃ᵣ x ((actF af) · at₁) at₂ fᵃᵗ hist h with free x
+  h-concatenate-∃ᵣ x ((actF af) · at₁) at₂ fᵃᵗ hist (h∈ , p , h) | impure (_ , c) = h∈ , p , h-concatenate-∃ᵣ (c p) at₁ at₂ fᵃᵗ hist h
+  h-concatenate-∃ᵣ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∃ at₁ ref zero ⦗ [] ⦘ ∨ ref⁺ fᵃᶠ in Mu x fᵃᶠ' ((false , formula transform-f fᵃᶠ') ∷ hist)) (sym (h-at→af-∃ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ))) h
+  h-concatenate-∃ᵣ x (at₁ + _) at₃ fᵃᵗ hist (inj₁ h) = inj₁ (h-concatenate-∃ᵣ x at₁ at₃ fᵃᵗ hist h)
+  h-concatenate-∃ᵣ x (_ + at₂) at₃ fᵃᵗ hist (inj₂ h) = inj₂ (h-concatenate-∃ᵣ x at₂ at₃ fᵃᵗ hist h)
 
-  desugar : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (String × Bool × List (Set ℓ)) n} → Formulaⁱ S ℓ xs → Formula' S ℓ (map (proj₂ ∘ proj₂) xs)
+h-at→af-∀ : {α : Set a} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (at₁ at₂ : ActionTree α ℓ) → (fᵃᶠ : Formulaᵃᶠ α ℓ prev) → at→af-∀ (concatenate at₁ at₂) fᵃᶠ ≡ at→af-∀ at₁ (at→af-∀ at₂ fᵃᶠ)
+h-at→af-∀ ⦗ ε ⦘ _ _ = refl
+h-at→af-∀ ⦗ actF _ ⦘ _ _ = refl
+h-at→af-∀ ⦗ _ * ⦘ _ _ = refl
+h-at→af-∀ (ε · at₁) at₂ fᵃᶠ = h-at→af-∀ at₁ at₂ fᵃᶠ
+h-at→af-∀ ((actF af) · at₁) at₂ fᵃᶠ = cong ([_]_ af) (h-at→af-∀ at₁ at₂ fᵃᶠ)
+h-at→af-∀ ((at₁ *) · at₂) at₃ fᵃᶠ = cong₂ (λ fᵃᶠ₁ fᵃᶠ₂ → ν (formula (fᵃᶠ₁ ∧ ref⁺ fᵃᶠ₂))) refl (h-at→af-∀ at₂ at₃ fᵃᶠ)
+h-at→af-∀ (at₁ + at₂) at₃ fᵃᶠ = cong₂ _∧_ (h-at→af-∀ at₁ at₃ fᵃᶠ) (h-at→af-∀ at₂ at₃ fᵃᶠ)
 
-  desugar-p : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (String × Bool × List (Set ℓ)) n} → {αs : List (Set ℓ)} → Parameterizedⁱ S ℓ xs αs → Parameterized' S ℓ (map (proj₂ ∘ proj₂) xs) αs
-  desugar-p (formula fⁱ) = formula desugar fⁱ
-  desugar-p (α ＝ a ↦ pⁱ) = α ＝ a ↦ (desugar-p ∘ pⁱ)
+h-concatenate-∀ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ [ concatenate at₁ at₂ ] fᵃᵗ ⦗ hist ⦘ ⇔ x ⊨ᵃᵗ [ at₁ ] [ at₂ ] fᵃᵗ ⦗ hist ⦘
+h-concatenate-∀ x at₁ at₂ fᵃᵗ hist = h-concatenate-∀ₗ x at₁ at₂ fᵃᵗ hist , h-concatenate-∀ᵣ x at₁ at₂ fᵃᵗ hist
+  where
+  h-concatenate-∀ₗ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ [ concatenate at₁ at₂ ] fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ [ at₁ ] [ at₂ ] fᵃᵗ ⦗ hist ⦘
+  h-concatenate-∀ₗ _ ⦗ ε ⦘ _ _ _ h = h
+  h-concatenate-∀ₗ _ ⦗ actF _ ⦘ _ _ _ h = h
+  h-concatenate-∀ₗ _ ⦗ _ * ⦘ _ _ _ h = h
+  h-concatenate-∀ₗ x (ε · at₁) at₂ fᵃᵗ hist h = h-concatenate-∀ₗ x at₁ at₂ fᵃᵗ hist h
+  h-concatenate-∀ₗ x ((actF _) · at₁) at₂ fᵃᵗ hist h with free x
+  ... | pure _ = tt
+  ... | impure (_ , c) = λ h∈ p → h-concatenate-∀ₗ (c p) at₁ at₂ fᵃᵗ hist (h h∈ p)
+  h-concatenate-∀ₗ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∀ at₁ ref zero ⦗ [] ⦘ ∧ ref⁺ fᵃᶠ in Nu x fᵃᶠ' ((true , formula transform-f fᵃᶠ') ∷ hist)) (h-at→af-∀ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ)) h
+  h-concatenate-∀ₗ x (at₁ + at₂) at₃ fᵃᵗ hist (h₁ , h₂) = h-concatenate-∀ₗ x at₁ at₃ fᵃᵗ hist h₁ , h-concatenate-∀ₗ x at₂ at₃ fᵃᵗ hist h₂
 
-  negate : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (String × Bool × List (Set ℓ)) n} → Formulaⁱ S ℓ xs → Formula' S ℓ (map (proj₂ ∘ proj₂) xs)
-
-  negate-p : {n : ℕ} → {S : Set s} → {ℓ : Level} → {xs : Vec (String × Bool × List (Set ℓ)) n} → {αs : List (Set ℓ)} → Parameterizedⁱ S ℓ xs αs → Parameterized' S ℓ (map (proj₂ ∘ proj₂) xs) αs
-  negate-p (formula fⁱ) = formula negate fⁱ
-  negate-p (α ＝ a ↦ pⁱ) = α ＝ a ↦ (negate-p ∘ pⁱ)
-
-  negate true = false
-  negate false = true
-  negate (val x) = val (¬ x)
-  negate {S = S} {ℓ = ℓ} {xs = xs} (~ fⁱ) = subst (Formula' S ℓ) (negate-helper xs not) (desugar fⁱ)
-  negate (fⁱ₁ ∧ fⁱ₂) = negate fⁱ₁ ∨ negate fⁱ₂
-  negate (fⁱ₁ ∨ fⁱ₂) = negate fⁱ₁ ∧ negate fⁱ₂
-  negate {S = S} {ℓ = ℓ} {xs = xs} (fⁱ₁ ⇒ fⁱ₂) = subst (Formula' S ℓ) (negate-helper xs not) (desugar fⁱ₁) ∧ negate fⁱ₂
-  negate (∀⦗ α ⦘ fⁱ) = ∃⦗ α ⦘ (negate ∘ fⁱ)
-  negate (∃⦗ α ⦘ fⁱ) = ∀⦗ α ⦘ (negate ∘ fⁱ)
-  negate (⟨ rf ⟩ fⁱ) = [ desugar-rf rf ] negate fⁱ
-  negate ([ rf ] fⁱ) = ⟨ desugar-rf rf ⟩ negate fⁱ
-  negate (μ name ． pⁱ) = ν negate-p pⁱ
-  negate (ν name ． pⁱ) = μ negate-p pⁱ
-  negate {ℓ = ℓ} {xs = xs} ref name ⦗ args ⦘ with find xs name _≟_ | inspect (find xs name) _≟_
-  ... | just (i , true , αs) | [ eq ]⁼ = ref i ⦗ subst (Arguments ℓ) (ref-helper xs name eq) args ⦘
-
-  desugar true = true
-  desugar false = false
-  desugar (val x) = val x
-  desugar {S = S} {ℓ = ℓ} {xs = xs} (~ fⁱ) = subst (Formula' S ℓ) (negate-helper xs not) (negate fⁱ)
-  desugar (fⁱ₁ ∧ fⁱ₂) = desugar fⁱ₁ ∧ desugar fⁱ₂
-  desugar (fⁱ₁ ∨ fⁱ₂) = desugar fⁱ₁ ∨ desugar fⁱ₂
-  desugar {S = S} {ℓ = ℓ} {xs = xs} (fⁱ₁ ⇒ fⁱ₂) =  subst (Formula' S ℓ) (negate-helper xs not) (negate fⁱ₁) ∨ desugar fⁱ₂
-  desugar (∀⦗ α ⦘ fⁱ) = ∀⦗ α ⦘ (desugar ∘ fⁱ)
-  desugar (∃⦗ α ⦘ fⁱ) = ∃⦗ α ⦘ (desugar ∘ fⁱ)
-  desugar (⟨ rf ⟩ fⁱ) = ⟨ desugar-rf rf ⟩ desugar fⁱ
-  desugar ([ rf ] fⁱ) = [ desugar-rf rf ] desugar fⁱ
-  desugar (μ name ． pⁱ) = μ desugar-p pⁱ
-  desugar (ν name ． pⁱ) = ν desugar-p pⁱ
-  desugar {ℓ = ℓ} {xs = xs} ref name ⦗ args ⦘ with find xs name _≟_ | inspect (find xs name) _≟_
-  ... | just (i , true , αs) | [ eq ]⁼ = ref i ⦗ subst (Arguments ℓ) (ref-helper xs name eq) args ⦘
+  h-concatenate-∀ᵣ : {C : Container s p} → {R : Set r} → {ℓ : Level} → {prev : List (List (Set ℓ))} → (x : Program C R) → (at₁ at₂ : ActionTree (Shape C) ℓ) → (fᵃᵗ : Formulaᵃᵗ (Shape C) ℓ prev) → (hist : History (Shape C) ℓ prev []) → x ⊨ᵃᵗ [ at₁ ] [ at₂ ] fᵃᵗ ⦗ hist ⦘ → x ⊨ᵃᵗ [ concatenate at₁ at₂ ] fᵃᵗ ⦗ hist ⦘
+  h-concatenate-∀ᵣ _ ⦗ ε ⦘ _ _ _ h = h
+  h-concatenate-∀ᵣ _ ⦗ actF _ ⦘ _ _ _ h = h
+  h-concatenate-∀ᵣ _ ⦗ _ * ⦘ _ _ _ h = h
+  h-concatenate-∀ᵣ x (ε · at₂) at₃ fᵃᵗ hist h = h-concatenate-∀ᵣ x at₂ at₃ fᵃᵗ hist h
+  h-concatenate-∀ᵣ x ((actF _) · at₂) at₃ fᵃᵗ hist h with free x
+  ... | pure _ = tt
+  ... | impure (_ , c) = λ h∈ p → h-concatenate-∀ᵣ (c p) at₂ at₃ fᵃᵗ hist (h h∈ p)
+  h-concatenate-∀ᵣ x ((at₁ *) · at₂) at₃ fᵃᵗ hist h = subst (λ fᵃᶠ → let fᵃᶠ' = at→af-∀ at₁ ref zero ⦗ [] ⦘ ∧ ref⁺ fᵃᶠ in Nu x fᵃᶠ' ((true , formula transform-f fᵃᶠ') ∷ hist)) (sym (h-at→af-∀ at₂ at₃ (fᵃᵗ→fᵃᶠ fᵃᵗ))) h
+  h-concatenate-∀ᵣ x (at₁ + at₂) at₃ fᵃᵗ hist (h₁ , h₂) = h-concatenate-∀ᵣ x at₁ at₃ fᵃᵗ hist h₁ , h-concatenate-∀ᵣ x at₂ at₃ fᵃᵗ hist h₂
