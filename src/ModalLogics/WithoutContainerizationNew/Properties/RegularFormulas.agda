@@ -17,7 +17,7 @@ open import ModalLogics.WithoutContainerizationNew.Base using (Arguments; Contex
 open import ModalLogics.WithoutContainerizationNew.Properties.Utils.RfConcatUtils using (⟨concatenate|at₁||at₂|⟩φ⇔⟨at₁⟩⟨at₂⟩φ; [concatenate|at₁||at₂|]φ⇔[at₁][at₂]φ)
 open import ModalLogics.WithoutContainerizationNew.Properties.Utils.RfConstUtils using (⟨at⟩false→false; [at]true)
 open import ModalLogics.WithoutContainerizationNew.Properties.Utils.RfDistribUtilsAll using ([at]|φ∧ψ|→[at]φ∧[at]ψ; [at]φ∧[at]ψ→[at]|φ∧ψ|)
-open import ModalLogics.WithoutContainerizationNew.Properties.Utils.RfDistribUtilsEx using (⟨at⟩|φ∨ψ|→⟨at⟩φ∨⟨at⟩ψ; ⟨at⟩φ∨⟨at⟩ψ→⟨at⟩|φ∨ψ|)
+open import ModalLogics.WithoutContainerizationNew.Properties.Utils.RfDistribUtilsEx using (⟨at⟩|φ∨ψ|→⟨at⟩φ∨⟨at⟩ψ; ⟨at⟩φ∨⟨at⟩ψ→⟨at⟩|φ∨ψ|; ⟨at⟩φ∧[at]ψ→⟨at⟩|φ∧ψ|)
 open import ModalLogics.WithoutContainerizationNew.Properties.Utils.Utils using (h-rf→at-eq; h-rf→at-just; h-rf→at-nothing)
 open import Relation.Binary.PropositionalEquality using (refl; inspect; sym; trans) renaming ([_] to [_]⁼)
 
@@ -171,7 +171,10 @@ private variable
 ... | just at with fⁱ→f' fⁱ₁ | fⁱ→f' fⁱ₂
 ...   | f'₁ | f'₂ = ⟨at⟩|φ∨ψ|→⟨at⟩φ∨⟨at⟩ψ Γ x at f'₁ f'₂ , ⟨at⟩φ∨⟨at⟩ψ→⟨at⟩|φ∨ψ| Γ x at f'₁ f'₂
 
--- ⟨R⟩φ∧[R]ψ→⟨R⟩|φ∧ψ|
+⟨R⟩φ∧[R]ψ→⟨R⟩|φ∧ψ| : (Γ : Context (Shape C) ℓ prev) → (x : Program C R) → (rf : RegularFormula (Shape C) ℓ) → (fⁱ₁ fⁱ₂ : Formulaⁱ (Shape C) ℓ prev flags) → Γ ⊢ x ⊨ⁱ ⟨ rf ⟩ fⁱ₁ ∧ [ rf ] fⁱ₂ → Γ ⊢ x ⊨ⁱ ⟨ rf ⟩ (fⁱ₁ ∧ fⁱ₂)
+⟨R⟩φ∧[R]ψ→⟨R⟩|φ∧ψ| Γ x rf fⁱ₁ fⁱ₂ h with rf→at rf
+... | nothing = h
+... | just at = ⟨at⟩φ∧[at]ψ→⟨at⟩|φ∧ψ| Γ x at (fⁱ→f' fⁱ₁) (fⁱ→f' fⁱ₂) h
 
 -- Theorems for [_]_
 
