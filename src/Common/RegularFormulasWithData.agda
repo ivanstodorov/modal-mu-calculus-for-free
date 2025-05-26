@@ -12,13 +12,13 @@ open import Relation.Nullary using (¬_)
 private variable
   s : Level
 
-infix 120 val_
-infix 120 act_
-infix 115 _ᶜ
-infixr 110 _∩_
-infixr 105 _∪_
-infix 100 ∀⦗_⦘_
-infix 100 ∃⦗_⦘_
+infix 60 val_
+infix 60 act_
+infix 55 _ᶜ
+infixr 45 _∩_
+infixr 40 _∪_
+infix 30 ∀⦗_⦘_
+infix 30 ∃⦗_⦘_
 
 data ActionFormula (S : Set s) (ℓ : Level) : Set (s ⊔ suc ℓ) where
   true false : ActionFormula S ℓ
@@ -41,11 +41,11 @@ s ∈ af₁ ∪ af₂ = s ∈ af₁ ⊎ s ∈ af₂
 s ∈ ∀⦗ _ ⦘ af = ∀ a → s ∈ af a
 s ∈ ∃⦗ _ ⦘ af = ∃[ a ] s ∈ af a
 
-infix 95 actF_
-infix 90 _*
-infix 85 _⁺
-infixr 80 _·_
-infixr 75 _+_
+infix 29 actF_
+infix 28 _*
+infix 27 _⁺
+infixr 26 _·_
+infixr 25 _+_
 
 data RegularFormula (S : Set s) (ℓ : Level) : Set (s ⊔ suc ℓ) where
   ε : RegularFormula S ℓ
